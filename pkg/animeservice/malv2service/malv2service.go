@@ -5,12 +5,19 @@ import (
 	"fmt"
 	as "gobot/pkg/animeservice"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 )
 
 const basePath string = "https://api.myanimelist.net/v2"
 const clientId string = "6114d00ca681b7701d1e15fe11a4987e"
+const timeLayout string = "2021-03-26"
+
+var animeListRequestFields = [7]string{
+	"alternative_titles", "broadcast", "status", "start_date", "end_date", "my_list_status", "num_episodes",
+}
 
 var headers = map[string][]string{
 	"Content-Type":    {"application/x-www-form-urlencoded"},
@@ -19,8 +26,21 @@ var headers = map[string][]string{
 	"Connection":      {"Keep-Alive"},
 }
 
+var airingStatusMap = map[string]uint8{
+	"currently_airing": as.Airing,
+	"finished_airing":  as.CompletedAiring,
+	"not_yet_aired":    as.NotStarted,
+}
+
+var listStatusMap = map[string]uint8{
+	"plan_to_watch": as.PlannedToWatch,
+	"completed":     as.Completed,
+	"watching":      as.Watching,
+	"dropped":       as.Dropped,
+}
+
 type malv2service struct {
-	tokenInfo TokenAuth
+	tokenInfo TokenAuthResponse
 	username  string
 	password  string
 	client    *resty.Client
@@ -45,8 +65,76 @@ func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
 	return nil
 }
 
+func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
+	if err := serv.verifyToken(); err != nil {
+		fmt.Println(err)
+	}
+
+	fieldStr := strings.Join(animeListRequestFields[:], ",")
+
+	resp, err := serv.client.R().
+		SetAuthToken(serv.tokenInfo.AccessToken).
+		SetHeaderMultiValues(headers).
+		SetQueryParams(map[string]string{
+			"limit":  "999",
+			"offset": "0",
+			"fields": fieldStr,
+			"sort":   "anime_title",
+		}).
+		Get(basePath + "/users/@me/animelist")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	var respJson AnimeListResponse
+	if err := json.Unmarshal(resp.Body(), &respJson); err != nil {
+		fmt.Println(err)
+	}
+
+	var animeList []*as.AnimeStruct
+	for _, v := range respJson.Data {
+		entry := v.AnimeEntry
+
+		var synonyms []string
+		for _, altTitle := range entry.AlternativeTitles.Synonyms {
+			synonyms = append(synonyms, altTitle)
+		}
+		for _, enSyn := range entry.AlternativeTitles.En {
+			synonyms = append(synonyms, string(enSyn))
+		}
+		for _, jaSyn := range entry.AlternativeTitles.Ja {
+			synonyms = append(synonyms, string(jaSyn))
+		}
+
+		layout := time.RFC3339[:len(entry.StartDate)]
+		parsedStartTime, err := time.Parse(layout, strings.TrimSpace(entry.StartDate))
+		if err != nil {
+			parsedStartTime = time.Now()
+		}
+
+		parsedEndTime, err := time.Parse(layout, strings.TrimSpace(entry.EndDate))
+		if err != nil {
+			parsedEndTime = time.Now()
+		}
+
+		an := as.NewAnimeStruct(
+			entry.Title,
+			synonyms,
+			parsedStartTime,
+			parsedEndTime,
+			float64(entry.MyListStatus.Score),
+			airingStatusMap[entry.Status],
+			listStatusMap[entry.MyListStatus.Status],
+		)
+		animeList = append(animeList, an)
+	}
+
+	return animeList
+}
+
 func NewMalv2Service(username string, password string) as.AnimeService {
-	return &malv2service{username: username, password: password, tokenInfo: TokenAuth{}, client: resty.New()}
+	return &malv2service{username: username, password: password, tokenInfo: TokenAuthResponse{}, client: resty.New()}
 }
 
 func (serv *malv2service) verifyToken() error {

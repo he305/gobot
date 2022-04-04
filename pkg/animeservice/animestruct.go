@@ -2,18 +2,14 @@ package animeservice
 
 import "time"
 
-type airingStatusType int8
-
 const (
-	Airing airingStatusType = iota + 1
+	Airing uint8 = iota + 1
 	CompletedAiring
 	NotStarted
 )
 
-type listStatusType int8
-
 const (
-	Unknown listStatusType = iota
+	Unknown uint8 = iota
 	NotInList
 	Watching
 	Completed
@@ -22,16 +18,15 @@ const (
 )
 
 type AnimeStruct struct {
-	title        string
-	synonyms     []string
-	startDate    time.Time
-	endTime      time.Time
-	globalRating float64
-	listRating   float64
-	airingStatus airingStatusType
-	listStatus   listStatusType
+	Title        string
+	Synonyms     []string
+	StartDate    time.Time
+	EndTime      time.Time
+	ListRating   float64
+	AiringStatus uint8
+	ListStatus   uint8
 }
 
-func NewAnimeStruct(title string, synonyms []string, startDate time.Time, endTime time.Time, globalRating float64, listRating float64, airingStatus airingStatusType, listStatus listStatusType) *AnimeStruct {
-	return &AnimeStruct{title: title, synonyms: synonyms, startDate: startDate, endTime: endTime, globalRating: globalRating, listStatus: listStatus}
+func NewAnimeStruct(title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8) *AnimeStruct {
+	return &AnimeStruct{Title: title, Synonyms: synonyms, StartDate: startDate, EndTime: endTime, ListStatus: listStatus}
 }

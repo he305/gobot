@@ -40,17 +40,15 @@ func Run() {
 	malv2password := viper.GetString("malv2password")
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
-	malserv.GetAnimeByTitle("bakemonogatari")
-	//debugMode := viper.GetBool("debugMode")
-	//telegramToken := viper.GetString("telegramToken")
+	malserv.GetUserAnimeList()
+
+	// debugMode := viper.GetBool("debugMode")
+	// telegramToken := viper.GetString("telegramToken")
 
 	// bot, err := tgbot.NewBotAPI(telegramToken)
 	// if err != nil {
 	// 	logger.Panic()
 	// }
-
-	// // testMsg := tgbot.NewMessage(1270875482, "test")
-	// // bot.Send(testMsg)
 
 	// bot.Debug = debugMode
 
