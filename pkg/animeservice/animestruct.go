@@ -18,6 +18,7 @@ const (
 )
 
 type AnimeStruct struct {
+	Id           int
 	Title        string
 	Synonyms     []string
 	StartDate    time.Time
@@ -27,6 +28,6 @@ type AnimeStruct struct {
 	ListStatus   uint8
 }
 
-func NewAnimeStruct(title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8) *AnimeStruct {
-	return &AnimeStruct{Title: title, Synonyms: synonyms, StartDate: startDate, EndTime: endTime, ListStatus: listStatus}
+func NewAnimeStruct(id int, title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8) *AnimeStruct {
+	return &AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, EndTime: endTime, ListStatus: listStatus}
 }

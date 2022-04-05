@@ -119,6 +119,7 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 		}
 
 		an := as.NewAnimeStruct(
+			entry.ID,
 			entry.Title,
 			synonyms,
 			parsedStartTime,
