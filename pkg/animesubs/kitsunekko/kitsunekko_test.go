@@ -1,18 +1,19 @@
 package kitsunekko_test
 
 import (
-	"gobot/internal/anime/kitsunekko"
+	"gobot/pkg/animesubs/kitsunekko"
 	"testing"
 	"time"
 )
 
 // func TestGetUrlContainingName(t *testing.T) {
+// 	expected := "https://kitsunekko.net/subtitles/japanese/Shingeki_No_Kyojin/Shingeki_No_Kyojin_097.srt"
+// 	title := "shingeki no kyoujin"
 // 	ws := kitsunekko.NewKitsunekkoScrapper()
-// 	ws.GetUrlContainingString("https://kitsunekko.net/dirlist.php?dir=subtitles%2Fjapanese%2F", "shingeki no kyoujin")
-// 	// t.Log(len(actual))
-// 	// for a := range test {
-// 	// 	t.Log(a)
-// 	// }
+// 	actual := ws.GetUrlLatestSubForAnime(title)
+// 	if expected != actual {
+// 		t.Errorf("expected %v, got %v", expected, actual)
+// 	}
 // }
 
 func TestFormatTimeCorrect(t *testing.T) {
