@@ -4,27 +4,28 @@ import (
 	"fmt"
 	"gobot/internal/anime"
 	"gobot/pkg/animeservice"
+	"gobot/pkg/animesubs"
 )
 
 type AnimeFeeder interface {
-	FeedInfo(info chan string)
+	UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct)
 }
 
 type animeFeeder struct {
 	animeService animeservice.AnimeService
+	subServive   animesubs.AnimeSubsService
 	cachedList   *anime.AnimeList
 }
 
 var _ AnimeFeeder = (*animeFeeder)(nil)
 
-func NewAnimeFeeder(animeService animeservice.AnimeService) AnimeFeeder {
-	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList()}
+func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.AnimeSubsService) AnimeFeeder {
+	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList(), subServive: animesubs}
 	af.cachedList.SetNewList(af.animeService.GetUserAnimeList())
 	return af
 }
 
-func (af *animeFeeder) FeedInfo(info chan string) {
-	defer close(info)
+func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct) {
 	fmt.Println("Feed info called")
 	curList := af.animeService.GetUserAnimeList()
 
@@ -39,7 +40,6 @@ func (af *animeFeeder) FeedInfo(info chan string) {
 			st += v.VerboseOutput()
 			st += "\n"
 		}
-		info <- st
 	}
 
 	if missingInNew != nil {
@@ -50,10 +50,14 @@ func (af *animeFeeder) FeedInfo(info chan string) {
 			st += v.VerboseOutput()
 			st += "\n"
 		}
-		info <- st
 	}
 
 	af.cachedList.SetNewList(curList)
 
 	fmt.Println("Feed info ended")
+
+	missingInCachedOutput = missingInCached
+	missingInNewOutput = missingInNew
+
+	return
 }

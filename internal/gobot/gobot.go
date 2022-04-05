@@ -3,7 +3,9 @@ package gobot
 import (
 	"fmt"
 	"gobot/internal/anime/animefeeder"
+	"gobot/pkg/animeservice"
 	"gobot/pkg/animeservice/malv2service"
+	"gobot/pkg/animesubs/kitsunekko"
 	"gobot/pkg/logging"
 	"os"
 	"time"
@@ -46,8 +48,9 @@ func Run() {
 	telegramChatId := viper.GetInt64("telegramChatId")
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
+	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper()
 
-	animeFeeder := animefeeder.NewAnimeFeeder(malserv)
+	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService)
 
 	debugMode := viper.GetBool("debugMode")
 	telegramToken := viper.GetString("telegramToken")
@@ -66,15 +69,29 @@ func Run() {
 
 	go func() {
 		for {
-			stChan := make(chan string)
-			go animeFeeder.FeedInfo(stChan)
-			for {
-				data, ok := <-stChan
-				fmt.Println(data)
-				if !ok {
-					break
+			missingInCached, missingInNew := animeFeeder.UpdateList()
+			if missingInCached != nil {
+				var st string
+				st += "New entries in list\n"
+				for _, v := range missingInCached {
+					st += v.VerboseOutput()
+					st += "\n"
 				}
-				msg := tgbot.NewMessage(telegramChatId, data)
+
+				msg := tgbot.NewMessage(telegramChatId, st)
+				bot.Send(msg)
+			}
+
+			if missingInNew != nil {
+				var st string
+				st += "Entries were deleted\n"
+				for _, v := range missingInNew {
+					v.ListStatus = animeservice.NotInList
+					st += v.VerboseOutput()
+					st += "\n"
+				}
+
+				msg := tgbot.NewMessage(telegramChatId, st)
 				bot.Send(msg)
 			}
 			fmt.Println("Here")
