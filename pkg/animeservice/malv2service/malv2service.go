@@ -127,6 +127,7 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 			float64(entry.MyListStatus.Score),
 			airingStatusMap[entry.Status],
 			listStatusMap[entry.MyListStatus.Status],
+			entry.MainPicture.Large,
 		)
 		animeList = append(animeList, an)
 	}

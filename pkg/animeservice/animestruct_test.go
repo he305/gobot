@@ -16,9 +16,10 @@ func TestVerboseAnimeStruct(t *testing.T) {
 		6,
 		animeservice.Airing,
 		animeservice.Dropped,
+		"",
 	)
 
-	expectedSt := "Title: Sample, airing status: airing, list status: dropped, list rating: 6"
+	expectedSt := "Title: Sample, airing status: airing, list status: dropped, list rating: 6, image url:\n"
 
 	actualSt := anime.VerboseOutput()
 

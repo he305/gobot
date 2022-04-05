@@ -44,13 +44,14 @@ type AnimeStruct struct {
 	ListRating   float64
 	AiringStatus uint8
 	ListStatus   uint8
+	ImageUrl     string
 }
 
-func NewAnimeStruct(id int, title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8) *AnimeStruct {
-	return &AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, ListRating: listRating, EndTime: endTime, AiringStatus: airingStatus, ListStatus: listStatus}
+func NewAnimeStruct(id int, title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8, imageUrl string) *AnimeStruct {
+	return &AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, ListRating: listRating, EndTime: endTime, AiringStatus: airingStatus, ListStatus: listStatus, ImageUrl: imageUrl}
 }
 
 func (a AnimeStruct) VerboseOutput() string {
-	st := fmt.Sprintf("Title: %s, airing status: %s, list status: %s, list rating: %d", a.Title, mapAiringStatusToString[a.AiringStatus], mapListStatusToString[a.ListStatus], int(a.ListRating))
+	st := fmt.Sprintf("Title: %s, airing status: %s, list status: %s, list rating: %d, image url:\n%s", a.Title, mapAiringStatusToString[a.AiringStatus], mapListStatusToString[a.ListStatus], int(a.ListRating), a.ImageUrl)
 	return st
 }
