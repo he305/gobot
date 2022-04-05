@@ -1,6 +1,9 @@
 package animeservice
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
 	Airing uint8 = iota + 1
@@ -17,6 +20,21 @@ const (
 	Dropped
 )
 
+var mapAiringStatusToString = map[uint8]string{
+	Airing:          "airing",
+	CompletedAiring: "completed airing",
+	NotStarted:      "not started",
+}
+
+var mapListStatusToString = map[uint8]string{
+	Unknown:        "unknown",
+	NotInList:      "not in list",
+	Watching:       "watching",
+	Completed:      "completed",
+	PlannedToWatch: "planned to watch",
+	Dropped:        "dropped",
+}
+
 type AnimeStruct struct {
 	Id           int
 	Title        string
@@ -29,5 +47,10 @@ type AnimeStruct struct {
 }
 
 func NewAnimeStruct(id int, title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8) *AnimeStruct {
-	return &AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, EndTime: endTime, ListStatus: listStatus}
+	return &AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, ListRating: listRating, EndTime: endTime, AiringStatus: airingStatus, ListStatus: listStatus}
+}
+
+func (a AnimeStruct) VerboseOutput() string {
+	st := fmt.Sprintf("Title: %s, airing status: %s, list status: %s, list rating: %d", a.Title, mapAiringStatusToString[a.AiringStatus], mapListStatusToString[a.ListStatus], int(a.ListRating))
+	return st
 }
