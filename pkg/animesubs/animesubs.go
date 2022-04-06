@@ -1,5 +1,12 @@
 package animesubs
 
+import "time"
+
+type SubsInfo struct {
+	Title       string
+	TimeUpdated time.Time
+	Url         string
+}
 type AnimeSubsService interface {
-	GetUrlLatestSubForAnime(title string) string
+	GetUrlLatestSubForAnime(titlesWithSynonyms []string) SubsInfo
 }

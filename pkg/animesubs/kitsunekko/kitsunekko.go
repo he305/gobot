@@ -15,12 +15,6 @@ type kitsunekkoScrapper struct {
 	logger *zap.SugaredLogger
 }
 
-type entry struct {
-	Title       string
-	Url         string
-	TimeUpdated time.Time
-}
-
 var _ animesubs.AnimeSubsService = (*kitsunekkoScrapper)(nil)
 var KitsunekkoTimeLayout = "Jan 02 2006 3:04:05 PM"
 var kitsunekkoJapBaseUrl = "https://kitsunekko.net/dirlist.php?dir=subtitles%2Fjapanese%2F"
@@ -29,30 +23,33 @@ func NewKitsunekkoScrapper() animesubs.AnimeSubsService {
 	return &kitsunekkoScrapper{logger: logging.GetLogger()}
 }
 
-func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(title string) string {
-	var founded []entry
+func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(titles []string) string {
+	var founded []animesubs.SubsInfo
 
 	collector := colly.NewCollector()
 
 	collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 
 		text := strings.ToLower(e.Text)
-		if stringutils.GetLevenshteinDistancePercent(text, title) > 80 {
-			timeSt, ok := e.DOM.Parent().Siblings().Attr("title")
-			if !ok {
-				return
-			}
 
-			parsedTime, err := time.Parse(KitsunekkoTimeLayout, timeSt)
-			if err != nil {
-				return
-			}
+		for _, title := range titles {
+			if stringutils.GetLevenshteinDistancePercent(text, title) > 80 {
+				timeSt, ok := e.DOM.Parent().Siblings().Attr("title")
+				if !ok {
+					return
+				}
 
-			founded = append(founded, entry{
-				Title:       text,
-				Url:         e.Request.AbsoluteURL(e.Attr("href")),
-				TimeUpdated: parsedTime,
-			})
+				parsedTime, err := time.Parse(KitsunekkoTimeLayout, timeSt)
+				if err != nil {
+					return
+				}
+
+				founded = append(founded, animesubs.SubsInfo{
+					Title:       text,
+					Url:         e.Request.AbsoluteURL(e.Attr("href")),
+					TimeUpdated: parsedTime,
+				})
+			}
 		}
 	})
 
@@ -79,15 +76,15 @@ func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(title string) string {
 	return actualentry.Url
 }
 
-func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(title string) string {
-	requiredUrl := ws.getRequiredAnimeUrl(title)
+func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(titlesWithSynonyms []string) animesubs.SubsInfo {
+	requiredUrl := ws.getRequiredAnimeUrl(titlesWithSynonyms)
 	if requiredUrl == "" {
-		return ""
+		return animesubs.SubsInfo{}
 	}
 
 	collector := colly.NewCollector()
 
-	var en entry
+	var en animesubs.SubsInfo
 	latestTime := time.Unix(0, 0)
 	collector.OnHTML("td.tdright", func(e *colly.HTMLElement) {
 		timeSt := e.Attr("title")
@@ -105,7 +102,7 @@ func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(title string) string {
 				return
 			}
 
-			en = entry{
+			en = animesubs.SubsInfo{
 				Title:       subTitle.Text(),
 				TimeUpdated: parsedTime,
 				Url:         e.Request.AbsoluteURL(localUrl),
@@ -118,8 +115,8 @@ func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(title string) string {
 	time.Sleep(100 * time.Millisecond)
 	if err := collector.Visit(requiredUrl); err != nil {
 		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", requiredUrl, err.Error())
-		return ""
+		return animesubs.SubsInfo{}
 	}
 
-	return en.Url
+	return en
 }
