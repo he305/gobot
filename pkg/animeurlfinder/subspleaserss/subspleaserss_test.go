@@ -2,6 +2,7 @@ package subspleaserss
 
 import (
 	"testing"
+	"time"
 )
 
 // func TestCorrectOuput(t *testing.T) {
@@ -35,5 +36,20 @@ func TestNormalizeRssTitles(t *testing.T) {
 		if actual[i] != expected[i] {
 			t.Errorf("expected %v, got %v", expected[i], actual[i])
 		}
+	}
+}
+
+func TestSubsPleaseTimeParse(t *testing.T) {
+	data := "Tue, 05 Apr 2022 04:40:55 +0000"
+	timeLayout := "Mon, 02 Jan 2006 15:04:05 -0700"
+
+	expected := time.Date(2022, time.April, 5, 4, 40, 55, 0, time.UTC)
+	actual, err := time.Parse(timeLayout, data)
+	if err != nil {
+		t.Errorf("expected %v, got %v", expected, err.Error())
+	}
+
+	if !actual.Equal(expected) {
+		t.Errorf("expected %v, got %v", expected, actual)
 	}
 }

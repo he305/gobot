@@ -1,5 +1,13 @@
 package animeurlfinder
 
+import "time"
+
+type AnimeUrlInfo struct {
+	Title       string
+	TimeUpdated time.Time
+	Url         string
+}
+
 type AnimeUrlFinder interface {
-	GetLatestUrlForTitle(title string) string
+	GetLatestUrlForTitle(titlesWithSynonyms []string) AnimeUrlInfo
 }

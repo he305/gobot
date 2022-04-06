@@ -14,6 +14,7 @@ import (
 )
 
 var rss1080Url = "https://subsplease.org/rss/?t&r=1080"
+var rssSubsPleaseTimeLayout = "Mon, 02 Jan 2006 15:04:05 -0700"
 var subspleaseRssPrefix = "[SubsPlease]"
 var levenshteinPercentMin = 70
 
@@ -43,10 +44,13 @@ func (s *subspleaserss) updateFeed() {
 	}
 }
 
-func (s *subspleaserss) GetLatestUrlForTitle(title string) string {
+func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms []string) animeurlfinder.AnimeUrlInfo {
 	s.updateFeed()
-	title = strings.TrimSpace(title)
-	title = strings.ToLower(title)
+
+	for i := range titlesWithSynonyms {
+		titlesWithSynonyms[i] = strings.TrimSpace(titlesWithSynonyms[i])
+		titlesWithSynonyms[i] = strings.ToLower(titlesWithSynonyms[i])
+	}
 
 	var rawRssTitles []string
 	for _, rawTitle := range s.cachedFeed.Items {
@@ -58,17 +62,33 @@ func (s *subspleaserss) GetLatestUrlForTitle(title string) string {
 	found := false
 	var idx int
 	for i, normalizedRssTitle := range normalizedRssTitles {
-		if isRssMatchingTitle(normalizedRssTitle, title) {
-			idx = i
-			found = true
+		for _, title := range titlesWithSynonyms {
+			if isRssMatchingTitle(normalizedRssTitle, title) {
+				idx = i
+				found = true
+				break
+			}
+		}
+
+		if found {
 			break
 		}
 	}
 
 	if found {
-		return s.cachedFeed.Items[idx].Link
+		parsedTime, err := time.Parse(rssSubsPleaseTimeLayout, s.cachedFeed.Items[idx].Published)
+		if err != nil {
+			panic("Error parsing rss subsplease time using default time format, critical error: " + err.Error())
+		}
+
+		return animeurlfinder.AnimeUrlInfo{
+			Title:       s.cachedFeed.Items[idx].Title,
+			TimeUpdated: parsedTime,
+			Url:         s.cachedFeed.Items[idx].Link,
+		}
 	}
-	return ""
+
+	return animeurlfinder.AnimeUrlInfo{}
 }
 
 func isRssMatchingTitle(rss string, title string) bool {
