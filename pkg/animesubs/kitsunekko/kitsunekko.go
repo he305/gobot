@@ -1,7 +1,6 @@
 package kitsunekko
 
 import (
-	"fmt"
 	"gobot/pkg/animesubs"
 	"gobot/pkg/logging"
 	"gobot/pkg/stringutils"
@@ -13,7 +12,6 @@ import (
 )
 
 type kitsunekkoScrapper struct {
-	client *colly.Collector
 	logger *zap.SugaredLogger
 }
 
@@ -28,13 +26,15 @@ var KitsunekkoTimeLayout = "Jan 02 2006 3:04:05 PM"
 var kitsunekkoJapBaseUrl = "https://kitsunekko.net/dirlist.php?dir=subtitles%2Fjapanese%2F"
 
 func NewKitsunekkoScrapper() animesubs.AnimeSubsService {
-	return &kitsunekkoScrapper{client: colly.NewCollector(), logger: logging.GetLogger()}
+	return &kitsunekkoScrapper{logger: logging.GetLogger()}
 }
 
 func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(title string) string {
 	var founded []entry
 
-	ws.client.OnHTML("a[href]", func(e *colly.HTMLElement) {
+	collector := colly.NewCollector()
+
+	collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 
 		text := strings.ToLower(e.Text)
 		if stringutils.GetLevenshteinDistancePercent(text, title) > 80 {
@@ -56,8 +56,12 @@ func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(title string) string {
 		}
 	})
 
-	if err := ws.client.Visit(kitsunekkoJapBaseUrl); err != nil {
+	if err := collector.Visit(kitsunekkoJapBaseUrl); err != nil {
 		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", kitsunekkoJapBaseUrl, err.Error())
+		return ""
+	}
+
+	if len(founded) == 0 {
 		return ""
 	}
 
@@ -72,16 +76,20 @@ func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(title string) string {
 		}
 	}
 
-	fmt.Println(actualentry)
 	return actualentry.Url
 }
 
 func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(title string) string {
 	requiredUrl := ws.getRequiredAnimeUrl(title)
+	if requiredUrl == "" {
+		return ""
+	}
+
+	collector := colly.NewCollector()
 
 	var en entry
 	latestTime := time.Unix(0, 0)
-	ws.client.OnHTML("td.tdright", func(e *colly.HTMLElement) {
+	collector.OnHTML("td.tdright", func(e *colly.HTMLElement) {
 		timeSt := e.Attr("title")
 
 		parsedTime, err := time.Parse(KitsunekkoTimeLayout, timeSt)
@@ -108,7 +116,7 @@ func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(title string) string {
 
 	// Let's sleep for some time before requesting second url
 	time.Sleep(100 * time.Millisecond)
-	if err := ws.client.Visit(requiredUrl); err != nil {
+	if err := collector.Visit(requiredUrl); err != nil {
 		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", requiredUrl, err.Error())
 		return ""
 	}
