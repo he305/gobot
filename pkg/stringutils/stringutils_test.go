@@ -1,7 +1,6 @@
-package stringutils_test
+package stringutils
 
 import (
-	"gobot/pkg/stringutils"
 	"testing"
 )
 
@@ -11,7 +10,7 @@ func TestGetLevenshteinDistanceCorrect(t *testing.T) {
 
 	expected := 3
 
-	actual := stringutils.GetLevenshteinDistance(first, second)
+	actual := GetLevenshteinDistance(first, second)
 
 	if expected != actual {
 		t.Errorf("expected %v, got %v", expected, actual)
@@ -24,7 +23,31 @@ func TestGetLevenshteinDistancePercentCorrect(t *testing.T) {
 
 	expected := 89
 
-	actual := stringutils.GetLevenshteinDistancePercent(first, second)
+	actual := GetLevenshteinDistancePercent(first, second)
+
+	if expected != actual {
+		t.Errorf("expected %v, got %v", expected, actual)
+	}
+}
+
+func TestAreSecondContainsFirstTrue(t *testing.T) {
+	first := "shinGekI nO kyoujin"
+	second := "shingeki no kyoujin - final season 04"
+
+	expected := true
+	actual := AreSecondContainsFirst(first, second)
+
+	if expected != actual {
+		t.Errorf("expected %v, got %v", expected, actual)
+	}
+}
+
+func TestAreSecondContainsFirstFalse(t *testing.T) {
+	first := "Jojo Golden wind"
+	second := "Jojo no Kimyou na Bouken"
+
+	expected := false
+	actual := AreSecondContainsFirst(first, second)
 
 	if expected != actual {
 		t.Errorf("expected %v, got %v", expected, actual)
