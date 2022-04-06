@@ -15,8 +15,8 @@ type AnimeFeeder interface {
 
 type LatestReleases struct {
 	Anime    *animeservice.AnimeStruct
-	AnimeUrl string
-	SubsUrl  string
+	AnimeUrl animeurlfinder.AnimeUrlInfo
+	SubsUrl  animesubs.SubsInfo
 }
 
 type animeFeeder struct {
@@ -58,12 +58,17 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 
 	for _, entry := range filteredList {
 		// Check latest animeurl
-		animeUrl := af.animeUrlFinder.GetLatestUrlForTitle(entry.Title)
+		animeUrlChan := make(chan animeurlfinder.AnimeUrlInfo)
+		go af.getLatestUrlForTitleChan(entry.FormAllNamesArray(), animeUrlChan)
 
 		// Check latest subs
-		animeSub := af.subServive.GetUrlLatestSubForAnime(entry.Title)
+		animeSubChan := make(chan animesubs.SubsInfo)
+		go af.getUrlLatestSubForAnimeChan(entry.FormAllNamesArray(), animeSubChan)
 
-		if animeUrl != "" || animeSub != "" {
+		animeUrl := <-animeUrlChan
+		animeSub := <-animeSubChan
+
+		if animeUrl.Url != "" || animeSub.Url != "" {
 			releases = append(releases, LatestReleases{
 				Anime:    entry,
 				AnimeUrl: animeUrl,
@@ -73,4 +78,16 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 	}
 
 	return releases
+}
+
+func (af *animeFeeder) getLatestUrlForTitleChan(titles []string, urlChan chan animeurlfinder.AnimeUrlInfo) {
+	data := af.animeUrlFinder.GetLatestUrlForTitle(titles)
+	urlChan <- data
+	close(urlChan)
+}
+
+func (af *animeFeeder) getUrlLatestSubForAnimeChan(titles []string, subChan chan animesubs.SubsInfo) {
+	data := af.subServive.GetUrlLatestSubForAnime(titles)
+	subChan <- data
+	close(subChan)
 }
