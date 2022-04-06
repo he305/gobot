@@ -6,6 +6,7 @@ import (
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animeservice/malv2service"
 	"gobot/pkg/animesubs/kitsunekko"
+	"gobot/pkg/animeurlfinder/subspleaserss"
 	"gobot/pkg/logging"
 	"os"
 	"time"
@@ -49,8 +50,9 @@ func Run() {
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
 	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper()
+	subspleaserss := subspleaserss.NewSubsPleaseRss()
 
-	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService)
+	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss)
 
 	debugMode := viper.GetBool("debugMode")
 	telegramToken := viper.GetString("telegramToken")
@@ -94,6 +96,12 @@ func Run() {
 				msg := tgbot.NewMessage(telegramChatId, st)
 				bot.Send(msg)
 			}
+
+			latestReleases := animeFeeder.FindLatestReleases()
+			for _, v := range latestReleases {
+				fmt.Println(v)
+			}
+
 			fmt.Println("Here")
 			time.Sleep(15 * time.Second)
 		}

@@ -13,12 +13,14 @@ func NewAnimeList() *AnimeList {
 	return &AnimeList{list: make([]*as.AnimeStruct, 0)}
 }
 
-func (alist *AnimeList) FilterByListStatus(status uint8) []*as.AnimeStruct {
+func (alist *AnimeList) FilterByListStatus(statuses ...uint8) []*as.AnimeStruct {
 	var filteredList []*as.AnimeStruct
 
 	for _, entry := range alist.list {
-		if entry.ListStatus == status {
-			filteredList = append(filteredList, entry)
+		for _, status := range statuses {
+			if entry.ListStatus == status {
+				filteredList = append(filteredList, entry)
+			}
 		}
 	}
 
