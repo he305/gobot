@@ -1,7 +1,6 @@
 package animefeeder
 
 import (
-	"fmt"
 	"gobot/internal/anime"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animesubs"
@@ -17,6 +16,11 @@ type LatestReleases struct {
 	Anime    *animeservice.AnimeStruct
 	AnimeUrl animeurlfinder.AnimeUrlInfo
 	SubsUrl  animesubs.SubsInfo
+}
+
+func (l LatestReleases) Equal(other LatestReleases) bool {
+	return l.AnimeUrl.Equal(other.AnimeUrl) &&
+		l.SubsUrl.Equal(other.SubsUrl)
 }
 
 type animeFeeder struct {
@@ -35,14 +39,11 @@ func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.
 }
 
 func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct) {
-	fmt.Println("Feed info called")
 	curList := af.animeService.GetUserAnimeList()
 
 	missingInCached, missingInNew := af.cachedList.FindMissingInBothLists(curList)
 
 	af.cachedList.SetNewList(curList)
-
-	fmt.Println("Feed info ended")
 
 	missingInCachedOutput = missingInCached
 	missingInNewOutput = missingInNew

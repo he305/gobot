@@ -1,7 +1,6 @@
 package anime
 
 import (
-	"fmt"
 	as "gobot/pkg/animeservice"
 )
 
@@ -28,7 +27,6 @@ func (alist *AnimeList) FilterByListStatus(statuses ...uint8) []*as.AnimeStruct 
 }
 
 func (alist *AnimeList) SetNewList(list []*as.AnimeStruct) {
-	fmt.Println("set new list, arg list size", len(list))
 	alist.list = list
 }
 

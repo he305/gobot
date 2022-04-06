@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	as "gobot/pkg/animeservice"
+	"gobot/pkg/logging"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"go.uber.org/zap"
 )
 
 const basePath string = "https://api.myanimelist.net/v2"
@@ -44,30 +46,35 @@ type malv2service struct {
 	username  string
 	password  string
 	client    *resty.Client
+	logger    *zap.SugaredLogger
 }
 
 var _ as.AnimeService = (*malv2service)(nil)
 
 func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
+	// NOT IMPLEMENTED
+	return nil
 	if err := serv.verifyToken(); err != nil {
-		fmt.Println(err)
+		serv.logger.Errorf("Error verifying token %s", err.Error())
+		return nil
 	}
 
-	resp, err := serv.client.R().
+	_, err := serv.client.R().
 		SetAuthToken(serv.tokenInfo.AccessToken).
 		SetHeaderMultiValues(headers).
 		SetQueryParam("q", title).
 		Get(basePath + "/anime")
 	if err != nil {
-		fmt.Println(err)
+		serv.logger.Errorf("Error sending request %s", err.Error())
+		return nil
 	}
-	fmt.Println(resp)
 	return nil
 }
 
 func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 	if err := serv.verifyToken(); err != nil {
-		fmt.Println(err)
+		serv.logger.Errorf("Error verifying token %s", err.Error())
+		return []*as.AnimeStruct{}
 	}
 
 	fieldStr := strings.Join(animeListRequestFields[:], ",")
@@ -84,12 +91,14 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 		Get(basePath + "/users/@me/animelist")
 
 	if err != nil {
-		fmt.Println(err)
+		serv.logger.Errorf("Error sending request %s", err.Error())
+		return []*as.AnimeStruct{}
 	}
 
 	var respJson AnimeListResponse
 	if err := json.Unmarshal(resp.Body(), &respJson); err != nil {
-		fmt.Println(err)
+		serv.logger.Errorf("Error unmarshalling response to json, error %s", err.Error())
+		return []*as.AnimeStruct{}
 	}
 
 	var animeList []*as.AnimeStruct
@@ -138,7 +147,7 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 }
 
 func NewMalv2Service(username string, password string) as.AnimeService {
-	return &malv2service{username: username, password: password, tokenInfo: TokenAuthResponse{}, client: resty.New()}
+	return &malv2service{username: username, password: password, tokenInfo: TokenAuthResponse{}, client: resty.New(), logger: logging.GetLogger()}
 }
 
 func (serv *malv2service) verifyToken() error {
@@ -162,7 +171,6 @@ func (serv *malv2service) verifyToken() error {
 	if err := json.Unmarshal(resp.Body(), &serv.tokenInfo); err != nil {
 		return err
 	}
-	fmt.Println("Parsed refresh Token!")
 	return nil
 }
 
@@ -183,7 +191,6 @@ func (serv *malv2service) getToken() error {
 	if err := json.Unmarshal(resp.Body(), &serv.tokenInfo); err != nil {
 		return fmt.Errorf("Couldn't parse token auth response")
 	}
-	fmt.Println("Parsed Token!")
 
 	return nil
 }
