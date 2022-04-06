@@ -98,13 +98,15 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 
 		var synonyms []string
 		for _, altTitle := range entry.AlternativeTitles.Synonyms {
-			synonyms = append(synonyms, altTitle)
+			if altTitle != "" {
+				synonyms = append(synonyms, altTitle)
+			}
 		}
-		for _, enSyn := range entry.AlternativeTitles.En {
-			synonyms = append(synonyms, string(enSyn))
+		if entry.AlternativeTitles.En != "" {
+			synonyms = append(synonyms, entry.AlternativeTitles.En)
 		}
-		for _, jaSyn := range entry.AlternativeTitles.Ja {
-			synonyms = append(synonyms, string(jaSyn))
+		if entry.AlternativeTitles.Ja != "" {
+			synonyms = append(synonyms, entry.AlternativeTitles.Ja)
 		}
 
 		layout := time.RFC3339[:len(entry.StartDate)]
