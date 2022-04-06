@@ -55,3 +55,10 @@ func (a AnimeStruct) VerboseOutput() string {
 	st := fmt.Sprintf("Title: %s, airing status: %s, list status: %s, list rating: %d, image url:\n%s", a.Title, mapAiringStatusToString[a.AiringStatus], mapListStatusToString[a.ListStatus], int(a.ListRating), a.ImageUrl)
 	return st
 }
+
+func (a AnimeStruct) FormAllNamesArray() (allNames []string) {
+	allNames = append(allNames, a.Title)
+	allNames = append(allNames, a.Synonyms...)
+
+	return
+}
