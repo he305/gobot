@@ -7,6 +7,7 @@ import (
 	"gobot/pkg/stringutils"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/mmcdole/gofeed"
 	"go.uber.org/zap"
@@ -17,40 +18,57 @@ var subspleaseRssPrefix = "[SubsPlease]"
 var levenshteinPercentMin = 70
 
 type subspleaserss struct {
-	parser *gofeed.Parser
-	logger *zap.SugaredLogger
+	parser      *gofeed.Parser
+	cachedFeed  *gofeed.Feed
+	logger      *zap.SugaredLogger
+	lastUpdated time.Time
 }
 
 var _ animeurlfinder.AnimeUrlFinder = (*subspleaserss)(nil)
 
 func NewSubsPleaseRss() animeurlfinder.AnimeUrlFinder {
-	return &subspleaserss{parser: gofeed.NewParser(), logger: logging.GetLogger()}
+	return &subspleaserss{parser: gofeed.NewParser(), logger: logging.GetLogger(), cachedFeed: nil}
+}
+
+func (s *subspleaserss) updateFeed() {
+	if s.cachedFeed == nil || time.Now().Sub(s.lastUpdated).Minutes() > 3 {
+		feed, err := s.parser.ParseURL(rss1080Url)
+
+		if err != nil {
+			s.logger.Errorf("Could parse subs please rss url, url : %s, error: %s", rss1080Url, err.Error())
+		}
+
+		s.cachedFeed = feed
+		s.lastUpdated = time.Now()
+	}
 }
 
 func (s *subspleaserss) GetLatestUrlForTitle(title string) string {
-	feed, err := s.parser.ParseURL(rss1080Url)
-
-	if err != nil {
-		s.logger.Errorf("Could parse subs please rss url, url : %s, error: %s", rss1080Url, err.Error())
-		return ""
-	}
+	s.updateFeed()
+	title = strings.TrimSpace(title)
+	title = strings.ToLower(title)
 
 	var rawRssTitles []string
-	for _, rawTitle := range feed.Items {
+	for _, rawTitle := range s.cachedFeed.Items {
 		rawRssTitles = append(rawRssTitles, rawTitle.Title)
 	}
 
 	normalizedRssTitles := normalizeRssTitles(rawRssTitles)
 
+	found := false
 	var idx int
 	for i, normalizedRssTitle := range normalizedRssTitles {
 		if isRssMatchingTitle(normalizedRssTitle, title) {
 			idx = i
+			found = true
 			break
 		}
 	}
 
-	return feed.Items[idx].Link
+	if found {
+		return s.cachedFeed.Items[idx].Link
+	}
+	return ""
 }
 
 func isRssMatchingTitle(rss string, title string) bool {
