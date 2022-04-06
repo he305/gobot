@@ -56,6 +56,10 @@ func (a AnimeStruct) VerboseOutput() string {
 	return st
 }
 
+func (a AnimeStruct) Equal(other AnimeStruct) bool {
+	return a.Id == other.Id && a.Title == other.Title
+}
+
 func (a AnimeStruct) FormAllNamesArray() (allNames []string) {
 	allNames = append(allNames, a.Title)
 	allNames = append(allNames, a.Synonyms...)
