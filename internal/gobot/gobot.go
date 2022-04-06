@@ -3,6 +3,7 @@ package gobot
 import (
 	"fmt"
 	"gobot/internal/anime/animefeeder"
+	"gobot/internal/anime/releasestorage/filereleasestorage"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animeservice/malv2service"
 	"gobot/pkg/animesubs/kitsunekko"
@@ -52,6 +53,8 @@ func Run() {
 	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper()
 	subspleaserss := subspleaserss.NewSubsPleaseRss()
 
+	storage := filereleasestorage.NewFileReleaseStorage("./storage/test.txt")
+
 	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss)
 
 	debugMode := viper.GetBool("debugMode")
@@ -98,11 +101,11 @@ func Run() {
 			}
 
 			latestReleases := animeFeeder.FindLatestReleases()
-			for _, v := range latestReleases {
+			newReleases := storage.UpdateStorage(latestReleases)
+
+			for _, v := range newReleases {
 				fmt.Println(v)
 			}
-
-			fmt.Println("Here")
 			time.Sleep(15 * time.Second)
 		}
 	}()
