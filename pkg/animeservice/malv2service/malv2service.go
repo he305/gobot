@@ -52,14 +52,12 @@ type malv2service struct {
 var _ as.AnimeService = (*malv2service)(nil)
 
 func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
-	// NOT IMPLEMENTED
-	return nil
 	if err := serv.verifyToken(); err != nil {
 		serv.logger.Errorf("Error verifying token %s", err.Error())
 		return nil
 	}
 
-	_, err := serv.client.R().
+	resp, err := serv.client.R().
 		SetAuthToken(serv.tokenInfo.AccessToken).
 		SetHeaderMultiValues(headers).
 		SetQueryParam("q", title).
@@ -68,7 +66,19 @@ func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
 		serv.logger.Errorf("Error sending request %s", err.Error())
 		return nil
 	}
-	return nil
+
+	var respJson AnimePlainResponse
+	if err := json.Unmarshal(resp.Body(), &respJson); err != nil {
+		serv.logger.Errorf("Error unmarshalling response to json, error %s", err.Error())
+		return nil
+	}
+
+	desEntry := respJson.Data[0].AnimeEntry
+	return &as.AnimeStruct{
+		Title:    desEntry.Title,
+		Id:       desEntry.ID,
+		ImageUrl: desEntry.MainPicture.Large,
+	}
 }
 
 func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {

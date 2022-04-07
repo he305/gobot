@@ -45,3 +45,21 @@ type AnimeListEntry struct {
 	} `json:"my_list_status"`
 	NumEpisodes int `json:"num_episodes"`
 }
+
+type AnimePlainResponse struct {
+	Data []struct {
+		AnimeEntry AnimePlainEntry `json:"node"`
+	} `json:"data"`
+	Paging struct {
+		Next string `json:"next"`
+	} `json:"paging"`
+}
+
+type AnimePlainEntry struct {
+	ID          int    `json:"id"`
+	Title       string `json:"title"`
+	MainPicture struct {
+		Medium string `json:"medium"`
+		Large  string `json:"large"`
+	} `json:"main_picture"`
+}
