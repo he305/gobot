@@ -25,3 +25,9 @@ func AreSecondContainsFirst(first string, second string) bool {
 	matched, _ := regexp.MatchString(first, second)
 	return matched
 }
+
+func LowerAndTrimText(text string) string {
+	text = strings.ToLower(text)
+	text = strings.TrimSpace(text)
+	return text
+}
