@@ -5,6 +5,9 @@ import (
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animesubs"
 	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/logging"
+
+	"go.uber.org/zap"
 )
 
 type AnimeFeeder interface {
@@ -28,12 +31,13 @@ type animeFeeder struct {
 	subServive     animesubs.AnimeSubsService
 	animeUrlFinder animeurlfinder.AnimeUrlFinder
 	cachedList     *anime.AnimeList
+	logger         *zap.SugaredLogger
 }
 
 var _ AnimeFeeder = (*animeFeeder)(nil)
 
 func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.AnimeSubsService, animeurlfinder animeurlfinder.AnimeUrlFinder) AnimeFeeder {
-	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList(), subServive: animesubs, animeUrlFinder: animeurlfinder}
+	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList(), subServive: animesubs, animeUrlFinder: animeurlfinder, logger: logging.GetLogger()}
 	af.cachedList.SetNewList(af.animeService.GetUserAnimeList())
 	return af
 }
@@ -48,6 +52,9 @@ func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.Anime
 	missingInCachedOutput = missingInCached
 	missingInNewOutput = missingInNew
 
+	if len(missingInCachedOutput) != 0 || len(missingInNewOutput) != 0 {
+		af.logger.Infof("Anime list was updated, %d entries added, %d entries deleted", len(missingInCachedOutput), len(missingInNewOutput))
+	}
 	return
 }
 
