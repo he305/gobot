@@ -7,22 +7,26 @@ import (
 	"gobot/internal/anime/releasestorage"
 	"gobot/pkg/animesubs"
 	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/logging"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type fileReleaseStorage struct {
 	cachedLatestRealeases []animefeeder.LatestReleases
 	filePath              string
+	logger                *zap.SugaredLogger
 }
 
 var _ releasestorage.ReleaseStorage = (*fileReleaseStorage)(nil)
 var defaultSeparator = "|"
 
 func NewFileReleaseStorage(path string) releasestorage.ReleaseStorage {
-	storage := &fileReleaseStorage{filePath: path}
+	storage := &fileReleaseStorage{filePath: path, logger: logging.GetLogger()}
 	storage.readStorage()
 	return storage
 }
@@ -87,9 +91,14 @@ func (s *fileReleaseStorage) readStorage() {
 			},
 		})
 	}
+	s.logger.Infow("File storage is read")
 }
 
 func (s *fileReleaseStorage) saveToStorage(newEntries []animefeeder.LatestReleases) {
+	if len(newEntries) == 0 {
+		return
+	}
+
 	f, err := os.OpenFile(s.filePath, os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		panic(fmt.Sprintf("Couldn't open file %s, error %s", s.filePath, err.Error()))
@@ -104,6 +113,8 @@ func (s *fileReleaseStorage) saveToStorage(newEntries []animefeeder.LatestReleas
 			panic(fmt.Sprintf("Couldn't write %s to file %s, error: %s", st, s.filePath, err.Error()))
 		}
 	}
+
+	s.logger.Infof("%d entries were saved into storage", len(newEntries))
 }
 
 func formStringFromLatestReleases(entry animefeeder.LatestReleases) string {
