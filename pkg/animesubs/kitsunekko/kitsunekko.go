@@ -3,11 +3,10 @@ package kitsunekko
 import (
 	"fmt"
 	"gobot/pkg/animesubs"
+	"gobot/pkg/fileio"
 	"gobot/pkg/logging"
 	"gobot/pkg/stringutils"
-	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -21,12 +20,20 @@ type kitsunekkoScrapper struct {
 	lastTimeUpdated time.Time
 	updateTimer     time.Duration
 	cachedFilePath  string
+	cachedVisitUrl  string
+	fileIo          fileio.FileIO
 }
 
 type pageEntry struct {
 	Text        string
 	TimeUpdated time.Time
 	Url         string
+}
+
+func (p pageEntry) Equal(other pageEntry) bool {
+	return p.Text == other.Text &&
+		p.TimeUpdated.Equal(other.TimeUpdated) &&
+		p.Url == other.Url
 }
 
 var _ animesubs.AnimeSubsService = (*kitsunekkoScrapper)(nil)
@@ -44,8 +51,15 @@ func configureKitsunekkoCollyCollector() *colly.Collector {
 	return collector
 }
 
-func NewKitsunekkoScrapper(cachedFilePath string, updateTimer time.Duration) animesubs.AnimeSubsService {
-	return &kitsunekkoScrapper{logger: logging.GetLogger(), collector: configureKitsunekkoCollyCollector(), updateTimer: updateTimer, cachedFilePath: cachedFilePath, lastTimeUpdated: time.Unix(0, 0)}
+func NewKitsunekkoScrapper(fileIo fileio.FileIO, cachedFilePath string, updateTimer time.Duration) animesubs.AnimeSubsService {
+	return &kitsunekkoScrapper{logger: logging.GetLogger(),
+		collector:       configureKitsunekkoCollyCollector(),
+		updateTimer:     updateTimer,
+		cachedFilePath:  cachedFilePath,
+		lastTimeUpdated: time.Unix(0, 0),
+		cachedVisitUrl:  "file://" + cachedFilePath,
+		fileIo:          fileIo,
+	}
 }
 
 func (ws *kitsunekkoScrapper) processPageElement(e *colly.HTMLElement) (pageEntry, error) {
@@ -70,7 +84,7 @@ func (ws *kitsunekkoScrapper) processPageElement(e *colly.HTMLElement) (pageEntr
 	urlRaw := e.Request.AbsoluteURL(e.Attr("href"))
 
 	return pageEntry{
-		Text:        e.Text,
+		Text:        strings.TrimSpace(e.Text),
 		TimeUpdated: parsedTime,
 		Url:         urlRaw,
 	}, nil
@@ -128,18 +142,21 @@ func (ws *kitsunekkoScrapper) getAllEntriesOnPage(path string) ([]pageEntry, err
 	return allEntries, err
 }
 
-func (ws *kitsunekkoScrapper) getRequiredAnimeUrl(titles []string) string {
-	allEntries, err := ws.getAllEntriesOnPage("file://" + ws.cachedFilePath)
+func (ws *kitsunekkoScrapper) getLatestEntry(url string, titles ...string) pageEntry {
+	allEntries, err := ws.getAllEntriesOnPage(url)
 	if err != nil {
 		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", ws.cachedFilePath, err.Error())
 	}
 
-	matchingEntries := filterPageEntriesByTitles(allEntries, titles)
+	if len(titles) != 0 {
+		allEntries = filterPageEntriesByTitles(allEntries, titles)
+	}
 
-	actualEntry := findLatestPageEntry(matchingEntries)
+	actualEntry := findLatestPageEntry(allEntries)
 
-	fixedUrl := strings.ReplaceAll(actualEntry.Url, "file://.", "")
-	return fixedUrl
+	actualEntry.Url = strings.ReplaceAll(actualEntry.Url, "file://.", "")
+
+	return actualEntry
 }
 
 func parseKitsunekkoTime(timeString string) (time.Time, error) {
@@ -151,24 +168,20 @@ func parseKitsunekkoTime(timeString string) (time.Time, error) {
 }
 
 func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(titlesWithSynonyms []string) animesubs.SubsInfo {
+	mainPageUrl := ws.cachedVisitUrl
+
 	err := ws.updateCache()
 	if err != nil {
 		ws.logger.Errorf("Error updating kitsunekko base site, error: %v", err)
+		mainPageUrl = kitsunekkoJapBaseUrl
+	}
+
+	requiredUrl := ws.getLatestEntry(mainPageUrl, titlesWithSynonyms...)
+	if requiredUrl.Url == "" {
 		return animesubs.SubsInfo{}
 	}
 
-	requiredUrl := ws.getRequiredAnimeUrl(titlesWithSynonyms)
-	if requiredUrl == "" {
-		return animesubs.SubsInfo{}
-	}
-
-	allEntries, err := ws.getAllEntriesOnPage(kitsunekkoBaseUrl + requiredUrl)
-	if err != nil {
-		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", ws.cachedFilePath, err.Error())
-		return animesubs.SubsInfo{}
-	}
-
-	actualEntry := findLatestPageEntry(allEntries)
+	actualEntry := ws.getLatestEntry(kitsunekkoBaseUrl + requiredUrl.Url)
 
 	return animesubs.SubsInfo{
 		Title:       actualEntry.Text,
@@ -178,26 +191,22 @@ func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(titlesWithSynonyms []strin
 }
 
 func (ws *kitsunekkoScrapper) updateCache() error {
-	if time.Now().Sub(ws.lastTimeUpdated) >= ws.updateTimer {
-		resp, err := http.Get(kitsunekkoJapBaseUrl)
-		if err != nil {
-			return err
-		}
-
-		defer resp.Body.Close()
-		f, err := os.OpenFile(ws.cachedFilePath, os.O_WRONLY|os.O_CREATE, 0666)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = io.Copy(f, resp.Body)
-		if err != nil {
-			return err
-		}
-		ws.lastTimeUpdated = time.Now()
-
-		ws.logger.Infow("Kitsunekko index html was cached")
+	if time.Now().Sub(ws.lastTimeUpdated) < ws.updateTimer {
+		return nil
 	}
 
+	resp, err := http.Get(kitsunekkoJapBaseUrl)
+	if err != nil {
+		return err
+	}
+
+	err = ws.fileIo.SaveResponseToFile(resp, ws.cachedFilePath)
+	if err != nil {
+		return err
+	}
+
+	ws.lastTimeUpdated = time.Now()
+
+	ws.logger.Infow("Kitsunekko index html was cached")
 	return nil
 }
