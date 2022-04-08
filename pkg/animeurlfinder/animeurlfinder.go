@@ -15,5 +15,5 @@ func (a AnimeUrlInfo) Equal(other AnimeUrlInfo) bool {
 }
 
 type AnimeUrlFinder interface {
-	GetLatestUrlForTitle(titlesWithSynonyms []string) AnimeUrlInfo
+	GetLatestUrlForTitle(titlesWithSynonyms ...string) AnimeUrlInfo
 }

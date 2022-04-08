@@ -89,7 +89,7 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 }
 
 func (af *animeFeeder) getLatestUrlForTitleChan(titles []string, urlChan chan animeurlfinder.AnimeUrlInfo) {
-	data := af.animeUrlFinder.GetLatestUrlForTitle(titles)
+	data := af.animeUrlFinder.GetLatestUrlForTitle(titles...)
 	urlChan <- data
 	close(urlChan)
 }

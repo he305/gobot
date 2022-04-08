@@ -9,6 +9,7 @@ import (
 	"gobot/pkg/animeservice/malv2service"
 	"gobot/pkg/animesubs/kitsunekko"
 	"gobot/pkg/animeurlfinder/subspleaserss"
+	"gobot/pkg/fileio"
 	"gobot/pkg/logging"
 	"os"
 	"path/filepath"
@@ -111,8 +112,9 @@ func Run() {
 	}
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
-	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(kitsunekkoCachePath, 5*time.Minute)
-	subspleaserss := subspleaserss.NewSubsPleaseRss()
+	fileIo := fileio.NewDefaultFileIO()
+	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 5*time.Minute)
+	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 5*time.Minute, logger)
 
 	storage := filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
 
