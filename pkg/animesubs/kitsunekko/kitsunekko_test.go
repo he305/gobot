@@ -11,16 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// func TestGetUrlContainingName(t *testing.T) {
-// 	expected := "https://kitsunekko.net/subtitles/japanese/Shingeki_No_Kyojin/Shingeki_No_Kyojin_097.srt"
-// 	title := "shingeki no kyoujin"
-// 	ws := kitsunekko.NewKitsunekkoScrapper()
-// 	actual := ws.GetUrlLatestSubForAnime(title)
-// 	if expected != actual {
-// 		t.Errorf("expected %v, got %v", expected, actual)
-// 	}
-// }
-
 type mockfileio struct{}
 
 func (f *mockfileio) SaveResponseToFile(data *http.Response, filePath string) error {
