@@ -17,16 +17,18 @@ import (
 )
 
 type MongoEntry struct {
-	Title string `bson:"title"`
-	Url   string `bson:"url"`
-	Time  int64  `bson:"time"`
+	AnimeTitle string `bson:"animeTitle,omitempty"`
+	AnimeUrl   string `bson:"animeUrl,omitempty"`
+	AnimeTime  int64  `bson:"animeTime"`
+	SubsTitle  string `bson:"subsTitle,omitempty"`
+	SubsUrl    string `bson:"subsUrl,omitempty"`
+	SubsTime   int64  `bson:"subsTime"`
 }
 
 type mongodbstorage struct {
 	client                *mongo.Client
 	connectionString      string
-	animeUrlCollection    string
-	subsInfoCollection    string
+	releasesUrlConnection string
 	database              string
 	logger                *zap.SugaredLogger
 	cachedLatestRealeases []animefeeder.LatestReleases
@@ -61,78 +63,84 @@ func (m *mongodbstorage) UpdateStorage(entries []animefeeder.LatestReleases) (ne
 }
 
 func (m *mongodbstorage) saveToStorage(entries []animefeeder.LatestReleases) error {
-	animeUrlCollection := m.client.Database(m.database).Collection(m.animeUrlCollection)
-	subsUrlCollection := m.client.Database(m.database).Collection(m.subsInfoCollection)
-
-	var newAnimeUrlEntries []MongoEntry
-	var newSubsUrlEntries []MongoEntry
-
+	releasesUrlCollection := m.client.Database(m.database).Collection(m.releasesUrlConnection)
+	var mongoEntries []MongoEntry
 	for _, entry := range entries {
-		if entry.AnimeUrl.Url != "" {
-			newAnimeUrlEntries = append(newAnimeUrlEntries, MongoEntry{
-				Title: entry.AnimeUrl.Title,
-				Url:   entry.AnimeUrl.Url,
-				Time:  entry.AnimeUrl.TimeUpdated.Unix(),
-			})
-		}
-
-		if entry.SubsUrl.Url != "" {
-			newSubsUrlEntries = append(newSubsUrlEntries, MongoEntry{
-				Title: entry.SubsUrl.Title,
-				Url:   entry.SubsUrl.Url,
-				Time:  entry.SubsUrl.TimeUpdated.Unix(),
-			})
-		}
-	}
-
-	// TOOD
-	var newAnimeUrlInterface []interface{}
-	for _, v := range newAnimeUrlEntries {
-		newAnimeUrlInterface = append(newAnimeUrlInterface, bson.D{
-			{Key: "title", Value: v.Title},
-			{Key: "url", Value: v.Url},
-			{Key: "time", Value: v.Time},
+		mongoEntries = append(mongoEntries, MongoEntry{
+			AnimeTitle: entry.AnimeUrl.Title,
+			AnimeUrl:   entry.AnimeUrl.Url,
+			AnimeTime:  entry.AnimeUrl.TimeUpdated.Unix(),
+			SubsTitle:  entry.SubsUrl.Title,
+			SubsUrl:    entry.SubsUrl.Url,
+			SubsTime:   entry.SubsUrl.TimeUpdated.Unix(),
 		})
 	}
-	var newSubsUrlInterface []interface{}
-	for _, v := range newSubsUrlEntries {
-		newSubsUrlInterface = append(newSubsUrlInterface, bson.D{
-			{Key: "title", Value: v.Title},
-			{Key: "url", Value: v.Url},
-			{Key: "time", Value: v.Time},
+
+	// animeUrlCollection := m.client.Database(m.database).Collection(m.animeUrlCollection)
+	// subsUrlCollection := m.client.Database(m.database).Collection(m.subsInfoCollection)
+
+	// var newAnimeUrlEntries []MongoEntry
+	// var newSubsUrlEntries []MongoEntry
+
+	// for _, entry := range entries {
+	// 	if entry.AnimeUrl.Url != "" {
+	// 		newAnimeUrlEntries = append(newAnimeUrlEntries, MongoEntry{
+	// 			Title: entry.AnimeUrl.Title,
+	// 			Url:   entry.AnimeUrl.Url,
+	// 			Time:  entry.AnimeUrl.TimeUpdated.Unix(),
+	// 		})
+	// 	}
+
+	// 	if entry.SubsUrl.Url != "" {
+	// 		newSubsUrlEntries = append(newSubsUrlEntries, MongoEntry{
+	// 			Title: entry.SubsUrl.Title,
+	// 			Url:   entry.SubsUrl.Url,
+	// 			Time:  entry.SubsUrl.TimeUpdated.Unix(),
+	// 		})
+	// 	}
+	// }
+
+	// TOOD
+	var newEntriesInterface []interface{}
+	for _, entry := range mongoEntries {
+		newEntriesInterface = append(newEntriesInterface, bson.D{
+
+			{Key: "animeTitle", Value: entry.AnimeTitle},
+			{Key: "animeUrl", Value: entry.AnimeUrl},
+			{Key: "animeTime", Value: entry.AnimeTime},
+
+			{Key: "subsTitle", Value: entry.SubsTitle},
+			{Key: "subsUrl", Value: entry.SubsUrl},
+			{Key: "subsTime", Value: entry.SubsTime},
 		})
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := animeUrlCollection.InsertMany(ctx, newAnimeUrlInterface)
+	_, err := releasesUrlCollection.InsertMany(ctx, newEntriesInterface)
 	if err != nil {
 		return err
 	}
 
-	_, err = subsUrlCollection.InsertMany(ctx, newSubsUrlInterface)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
 func (m *mongodbstorage) readStorage() error {
-	animeUrlReleases, err := m.readCollection(m.animeUrlCollection)
+	releases, err := m.readCollection(m.releasesUrlConnection)
 	if err != nil {
 		return err
 	}
 
-	subsUrlReleases, err := m.readCollection(m.subsInfoCollection)
-	if err != nil {
-		return err
-	}
+	// subsUrlReleases, err := m.readCollection(m.subsInfoCollection)
+	// if err != nil {
+	// 	return err
+	// }
 
 	m.cachedLatestRealeases = nil
 
-	m.cachedLatestRealeases = append(m.cachedLatestRealeases, animeUrlReleases...)
-	m.cachedLatestRealeases = append(m.cachedLatestRealeases, subsUrlReleases...)
+	m.cachedLatestRealeases = append(m.cachedLatestRealeases, releases...)
+	//m.cachedLatestRealeases = append(m.cachedLatestRealeases, subsUrlReleases...)
 
 	fmt.Println(m.cachedLatestRealeases)
 	return nil
@@ -166,36 +174,48 @@ func (m *mongodbstorage) readCollection(collectionName string) ([]animefeeder.La
 	}
 
 	for _, entry := range allEntries {
-		animeUrlEntries = append(animeUrlEntries, m.createLatestRelease(collectionName, entry))
+		animeUrlEntries = append(animeUrlEntries, animefeeder.LatestReleases{
+			Anime: nil,
+			AnimeUrl: animeurlfinder.AnimeUrlInfo{
+				Title:       entry.AnimeTitle,
+				Url:         entry.AnimeUrl,
+				TimeUpdated: time.Unix(entry.AnimeTime, 0),
+			},
+			SubsUrl: animesubs.SubsInfo{
+				Title:       entry.SubsTitle,
+				Url:         entry.SubsUrl,
+				TimeUpdated: time.Unix(entry.SubsTime, 0),
+			},
+		})
 	}
 
 	return animeUrlEntries, nil
 }
 
-func (m *mongodbstorage) createLatestRelease(collectionName string, entry MongoEntry) animefeeder.LatestReleases {
-	switch collectionName {
-	case m.animeUrlCollection:
-		return animefeeder.LatestReleases{
-			Anime: nil,
-			AnimeUrl: animeurlfinder.AnimeUrlInfo{
-				Title:       entry.Title,
-				Url:         entry.Url,
-				TimeUpdated: time.Unix(entry.Time, 0),
-			},
-		}
-	case m.subsInfoCollection:
-		return animefeeder.LatestReleases{
-			Anime: nil,
-			SubsUrl: animesubs.SubsInfo{
-				Title:       entry.Title,
-				Url:         entry.Url,
-				TimeUpdated: time.Unix(entry.Time, 0),
-			},
-		}
-	}
+// func (m *mongodbstorage) createLatestRelease(collectionName string, entry MongoEntry) animefeeder.LatestReleases {
+// 	switch collectionName {
+// 	case m.animeUrlCollection:
+// 		return animefeeder.LatestReleases{
+// 			Anime: nil,
+// 			AnimeUrl: animeurlfinder.AnimeUrlInfo{
+// 				Title:       entry.Title,
+// 				Url:         entry.Url,
+// 				TimeUpdated: time.Unix(entry.Time, 0),
+// 			},
+// 		}
+// 	case m.subsInfoCollection:
+// 		return animefeeder.LatestReleases{
+// 			Anime: nil,
+// 			SubsUrl: animesubs.SubsInfo{
+// 				Title:       entry.Title,
+// 				Url:         entry.Url,
+// 				TimeUpdated: time.Unix(entry.Time, 0),
+// 			},
+// 		}
+// 	}
 
-	return animefeeder.LatestReleases{}
-}
+// 	return animefeeder.LatestReleases{}
+// }
 
 func NewReleaseStorage(connectionString string, database string, logger *zap.SugaredLogger) (releasestorage.ReleaseStorage, error) {
 	mongoClient, err := connectToDatabase(connectionString)
@@ -203,12 +223,11 @@ func NewReleaseStorage(connectionString string, database string, logger *zap.Sug
 		return nil, err
 	}
 	m := &mongodbstorage{
-		connectionString:   connectionString,
-		client:             mongoClient,
-		animeUrlCollection: os.Getenv("animeUrlCollection"),
-		subsInfoCollection: os.Getenv("subsInfoCollection"),
-		database:           database,
-		logger:             logger,
+		connectionString:      connectionString,
+		client:                mongoClient,
+		releasesUrlConnection: os.Getenv("releasesUrlConnection"),
+		database:              database,
+		logger:                logger,
 	}
 
 	err = m.readStorage()
