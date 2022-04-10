@@ -1,0 +1,3 @@
+debugMode : true
+kitsunekkoCachePath : ./cache/kitsunekko.html
+releaseStoragePath : ./storage/test.txt

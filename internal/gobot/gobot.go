@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"gobot/internal/anime/animefeeder"
 	"gobot/internal/anime/releasestorage"
-	"gobot/internal/anime/releasestorage/filereleasestorage"
+	"gobot/internal/anime/releasestorage/mongodbstorage"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animeservice/malv2service"
 	"gobot/pkg/animesubs/kitsunekko"
@@ -13,10 +13,12 @@ import (
 	"gobot/pkg/logging"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
 	tgbot "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -91,15 +93,19 @@ func createPath(path string) error {
 }
 
 func Run() {
+	if err := godotenv.Load(".env"); err != nil {
+		panic(err)
+	}
+
 	initLogger()
 	logger = logging.GetLogger()
 	if err := initConfig(); err != nil {
 		logger.Panic(err)
 	}
 
-	malv2username := viper.GetString("malv2username")
-	malv2password := viper.GetString("malv2password")
-	telegramChatId := viper.GetInt64("telegramChatId")
+	malv2username := os.Getenv("malv2username")
+	malv2password := os.Getenv("malv2password")
+	telegramChatId, _ := strconv.ParseInt(os.Getenv("telegramChatId"), 10, 64)
 
 	kitsunekkoCachePath := viper.GetString("kitsunekkoCachePath")
 	releaseStoragePath := viper.GetString("releaseStoragePath")
@@ -116,12 +122,16 @@ func Run() {
 	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 5*time.Minute)
 	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 5*time.Minute, logger)
 
-	storage := filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
+	//storage := filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
+	storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
+	if err != nil {
+		logger.Error(err)
+	}
 
 	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss)
 
 	debugMode := viper.GetBool("debugMode")
-	telegramToken := viper.GetString("telegramToken")
+	telegramToken := os.Getenv("telegramToken")
 
 	bot, err := tgbot.NewBotAPI(telegramToken)
 	if err != nil {

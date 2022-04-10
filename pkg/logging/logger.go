@@ -3,6 +3,8 @@ package logging
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/zap"
@@ -17,6 +19,19 @@ const (
 	DEBUG mode = iota
 	PROD
 )
+
+func createPath(path string) error {
+	_, err := os.Stat(path)
+	if !os.IsNotExist(err) {
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
+		return err
+	}
+	_, err = os.Create(path)
+	return err
+}
 
 func setTimeEncoding(config *zap.Config, m mode) {
 	switch m {
@@ -37,6 +52,10 @@ func setTimeEncoding(config *zap.Config, m mode) {
 func InitLoggerConfig(jsonConfig []byte) {
 	var cfg zap.Config
 	if err := json.Unmarshal(jsonConfig, &cfg); err != nil {
+		panic(err)
+	}
+
+	if err := createPath(cfg.OutputPaths[1]); err != nil {
 		panic(err)
 	}
 
