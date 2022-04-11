@@ -1,1 +1,1 @@
-worker: go run cmd/gobot/main.go
+worker: bin/gobot
