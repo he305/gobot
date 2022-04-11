@@ -98,7 +98,7 @@ func createPath(path string) error {
 
 func Run() {
 	if err := godotenv.Load(".env"); err != nil {
-		panic(err)
+		logger.Info(".env file was not found")
 	}
 
 	initLogger()
