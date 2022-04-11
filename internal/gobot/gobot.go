@@ -12,6 +12,7 @@ import (
 	"gobot/pkg/animeurlfinder/subspleaserss"
 	"gobot/pkg/fileio"
 	"gobot/pkg/logging"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -98,7 +99,7 @@ func createPath(path string) error {
 
 func Run() {
 	if err := godotenv.Load(".env"); err != nil {
-		logger.Info(".env file was not found")
+		log.Println(".env file was not found")
 	}
 
 	initLogger()
