@@ -1,1 +1,1 @@
-worker: bin/gobot
+worker: gobot
