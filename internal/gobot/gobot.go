@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gobot/internal/anime/animefeeder"
 	"gobot/internal/anime/releasestorage"
+	"gobot/internal/anime/releasestorage/filereleasestorage"
 	"gobot/internal/anime/releasestorage/mongodbstorage"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animeservice/malv2service"
@@ -46,7 +47,10 @@ func initLogger() {
 
 func getInfoForPrinting(animeFeeder animefeeder.AnimeFeeder, storage releasestorage.ReleaseStorage) (st string) {
 
-	missingInCached, missingInNew := animeFeeder.UpdateList()
+	missingInCached, missingInNew, err := animeFeeder.UpdateList()
+	if err != nil {
+		logger.Errorf("Feeder couldn't update list, error %v", err)
+	}
 	if missingInCached != nil {
 		st += "New entries in list\n"
 		for _, v := range missingInCached {
@@ -122,20 +126,21 @@ func Run() {
 	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 5*time.Minute)
 	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 5*time.Minute, logger)
 
-	//storage := filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
 	storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
 	if err != nil {
 		logger.Error(err)
+		logger.Info("Using file storage")
+		storage = filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
 	}
 
-	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss)
+	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss, logger)
 
 	debugMode := viper.GetBool("debugMode")
 	telegramToken := os.Getenv("telegramToken")
 
 	bot, err := tgbot.NewBotAPI(telegramToken)
 	if err != nil {
-		logger.Panic()
+		logger.Errorf("Couldn't initialize telegram bot")
 	}
 
 	bot.Debug = debugMode
@@ -167,8 +172,13 @@ func Run() {
 			if charArray[0] == '/' {
 				splittedMessage := strings.Split(update.Message.Text, " ")
 				if len(splittedMessage) > 1 && splittedMessage[0] == "/anime" {
-					entry := malserv.GetAnimeByTitle(strings.Join(splittedMessage[1:], " "))
-					msg := tgbot.NewMessage(update.Message.Chat.ID, entry.VerboseOutput())
+					entry, err := malserv.GetAnimeByTitle(strings.Join(splittedMessage[1:], " "))
+					var msg tgbot.MessageConfig
+					if err != nil {
+						msg = tgbot.NewMessage(update.Message.Chat.ID, "Error getting anime")
+					} else {
+						msg = tgbot.NewMessage(update.Message.Chat.ID, entry.VerboseOutput())
+					}
 					bot.Send(msg)
 				}
 			}

@@ -5,13 +5,12 @@ import (
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animesubs"
 	"gobot/pkg/animeurlfinder"
-	"gobot/pkg/logging"
 
 	"go.uber.org/zap"
 )
 
 type AnimeFeeder interface {
-	UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct)
+	UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct, err error)
 	FindLatestReleases() []LatestReleases
 }
 
@@ -27,23 +26,40 @@ func (l LatestReleases) Equal(other LatestReleases) bool {
 }
 
 type animeFeeder struct {
-	animeService   animeservice.AnimeService
-	subServive     animesubs.AnimeSubsService
-	animeUrlFinder animeurlfinder.AnimeUrlFinder
-	cachedList     *anime.AnimeList
-	logger         *zap.SugaredLogger
+	animeService     animeservice.AnimeService
+	subServive       animesubs.AnimeSubsService
+	animeUrlFinder   animeurlfinder.AnimeUrlFinder
+	cachedList       *anime.AnimeList
+	logger           *zap.SugaredLogger
+	initialListError bool
 }
 
 var _ AnimeFeeder = (*animeFeeder)(nil)
 
-func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.AnimeSubsService, animeurlfinder animeurlfinder.AnimeUrlFinder) AnimeFeeder {
-	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList(), subServive: animesubs, animeUrlFinder: animeurlfinder, logger: logging.GetLogger()}
-	af.cachedList.SetNewList(af.animeService.GetUserAnimeList())
+func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.AnimeSubsService, animeurlfinder animeurlfinder.AnimeUrlFinder, logger *zap.SugaredLogger) AnimeFeeder {
+	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList(), subServive: animesubs, animeUrlFinder: animeurlfinder, logger: logger}
+	animeList, err := af.animeService.GetUserAnimeList()
+	if err != nil {
+		af.logger.Errorf("Error getting initial animelist")
+		af.initialListError = true
+	} else {
+		af.initialListError = false
+	}
+
+	af.cachedList.SetNewList(animeList)
 	return af
 }
 
-func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct) {
-	curList := af.animeService.GetUserAnimeList()
+func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct, err error) {
+	curList, err := af.animeService.GetUserAnimeList()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if af.initialListError {
+		af.cachedList.SetNewList(curList)
+		af.initialListError = false
+	}
 
 	missingInCached, missingInNew := af.cachedList.FindMissingInBothLists(curList)
 
@@ -61,6 +77,7 @@ func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.Anime
 func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 	var releases []LatestReleases
 
+	af.logger.Debug("Feeder finder started")
 	// Get filtered list
 	filteredList := af.cachedList.FilterByListStatus(animeservice.PlannedToWatch, animeservice.Watching)
 
@@ -84,6 +101,8 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 			})
 		}
 	}
+
+	af.logger.Debug("Feeder finder ended")
 
 	return releases
 }

@@ -51,10 +51,10 @@ type malv2service struct {
 
 var _ as.AnimeService = (*malv2service)(nil)
 
-func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
+func (serv *malv2service) GetAnimeByTitle(title string) (*as.AnimeStruct, error) {
 	if err := serv.verifyToken(); err != nil {
 		serv.logger.Errorf("Error verifying token %s", err.Error())
-		return nil
+		return nil, err
 	}
 
 	resp, err := serv.client.R().
@@ -64,13 +64,13 @@ func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
 		Get(basePath + "/anime")
 	if err != nil {
 		serv.logger.Errorf("Error sending request %s", err.Error())
-		return nil
+		return nil, err
 	}
 
 	var respJson AnimePlainResponse
 	if err := json.Unmarshal(resp.Body(), &respJson); err != nil {
 		serv.logger.Errorf("Error unmarshalling response to json, error %s", err.Error())
-		return nil
+		return nil, err
 	}
 
 	desEntry := respJson.Data[0].AnimeEntry
@@ -78,13 +78,13 @@ func (serv *malv2service) GetAnimeByTitle(title string) *as.AnimeStruct {
 		Title:    desEntry.Title,
 		Id:       desEntry.ID,
 		ImageUrl: desEntry.MainPicture.Large,
-	}
+	}, nil
 }
 
-func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
+func (serv *malv2service) GetUserAnimeList() ([]*as.AnimeStruct, error) {
 	if err := serv.verifyToken(); err != nil {
 		serv.logger.Errorf("Error verifying token %s", err.Error())
-		return []*as.AnimeStruct{}
+		return nil, err
 	}
 
 	fieldStr := strings.Join(animeListRequestFields[:], ",")
@@ -102,13 +102,13 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 
 	if err != nil {
 		serv.logger.Errorf("Error sending request %s", err.Error())
-		return []*as.AnimeStruct{}
+		return nil, err
 	}
 
 	var respJson AnimeListResponse
 	if err := json.Unmarshal(resp.Body(), &respJson); err != nil {
 		serv.logger.Errorf("Error unmarshalling response to json, error %s", err.Error())
-		return []*as.AnimeStruct{}
+		return nil, err
 	}
 
 	var animeList []*as.AnimeStruct
@@ -153,7 +153,7 @@ func (serv *malv2service) GetUserAnimeList() []*as.AnimeStruct {
 		animeList = append(animeList, an)
 	}
 
-	return animeList
+	return animeList, nil
 }
 
 func NewMalv2Service(username string, password string) as.AnimeService {
