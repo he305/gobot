@@ -78,7 +78,6 @@ func (s *fileReleaseStorage) readStorage() {
 		parsedTimeSubUrl := time.Unix(rawTimeSubUrl, 0)
 
 		s.cachedLatestRealeases = append(s.cachedLatestRealeases, animefeeder.LatestReleases{
-			Anime: nil,
 			AnimeUrl: animeurlfinder.AnimeUrlInfo{
 				Title:       splitted[0],
 				TimeUpdated: parsedTimeAnimeUrl,

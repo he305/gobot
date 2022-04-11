@@ -11,17 +11,18 @@ import (
 	"time"
 
 	"github.com/gocolly/colly"
+	"github.com/gocolly/colly/storage"
 	"go.uber.org/zap"
 )
 
 type kitsunekkoScrapper struct {
 	logger          *zap.SugaredLogger
-	collector       *colly.Collector
 	lastTimeUpdated time.Time
 	updateTimer     time.Duration
 	cachedFilePath  string
 	cachedVisitUrl  string
 	fileIo          fileio.FileIO
+	collector *colly.Collector
 }
 
 type pageEntry struct {
@@ -41,9 +42,9 @@ var KitsunekkoTimeLayout = "Jan 02 2006 3:04:05 PM"
 var kitsunekkoBaseUrl = "https://kitsunekko.net"
 var kitsunekkoJapBaseUrl = "https://kitsunekko.net/dirlist.php?dir=subtitles%2Fjapanese%2F"
 
-func configureKitsunekkoCollyCollector() *colly.Collector {
+func getNewKitsunekkoCollyCollector() *colly.Collector {
 	collector := colly.NewCollector()
-	collector.AllowURLRevisit = true
+	collector.Async = true
 	t := &http.Transport{}
 	t.RegisterProtocol("file", http.NewFileTransport(http.Dir(".")))
 	collector.WithTransport(t)
@@ -53,12 +54,12 @@ func configureKitsunekkoCollyCollector() *colly.Collector {
 
 func NewKitsunekkoScrapper(fileIo fileio.FileIO, cachedFilePath string, updateTimer time.Duration) animesubs.AnimeSubsService {
 	return &kitsunekkoScrapper{logger: logging.GetLogger(),
-		collector:       configureKitsunekkoCollyCollector(),
 		updateTimer:     updateTimer,
 		cachedFilePath:  cachedFilePath,
 		lastTimeUpdated: time.Unix(0, 0),
 		cachedVisitUrl:  "file://" + cachedFilePath,
 		fileIo:          fileIo,
+		collector: getNewKitsunekkoCollyCollector(),
 	}
 }
 
@@ -129,7 +130,9 @@ func findLatestPageEntry(entries []pageEntry) pageEntry {
 func (ws *kitsunekkoScrapper) getAllEntriesOnPage(path string) ([]pageEntry, error) {
 	var allEntries []pageEntry
 
-	ws.collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
+	collector := getNewKitsunekkoCollyCollector()
+	
+	collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		parsedEntry, err := ws.processPageElement(e)
 		if err != nil {
 			ws.logger.Error(err)
@@ -138,14 +141,16 @@ func (ws *kitsunekkoScrapper) getAllEntriesOnPage(path string) ([]pageEntry, err
 		allEntries = append(allEntries, parsedEntry)
 	})
 
-	err := ws.collector.Visit(path)
+	err := collector.Visit(path)
+	collector.Wait()
+	collector.SetStorage(&storage.InMemoryStorage{})
 	return allEntries, err
 }
 
 func (ws *kitsunekkoScrapper) getLatestEntry(url string, titles ...string) pageEntry {
 	allEntries, err := ws.getAllEntriesOnPage(url)
 	if err != nil {
-		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", ws.cachedFilePath, err.Error())
+		ws.logger.Errorf("Error acquiring kitsunekko sub, url: %s, error: %s", url, err.Error())
 	}
 
 	if len(titles) != 0 {
@@ -181,6 +186,7 @@ func (ws *kitsunekkoScrapper) GetUrlLatestSubForAnime(titlesWithSynonyms []strin
 		return animesubs.SubsInfo{}
 	}
 
+	time.Sleep(50 * time.Millisecond)
 	actualEntry := ws.getLatestEntry(kitsunekkoBaseUrl + requiredUrl.Url)
 
 	return animesubs.SubsInfo{

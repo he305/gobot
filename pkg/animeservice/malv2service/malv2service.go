@@ -51,10 +51,10 @@ type malv2service struct {
 
 var _ as.AnimeService = (*malv2service)(nil)
 
-func (serv *malv2service) GetAnimeByTitle(title string) (*as.AnimeStruct, error) {
+func (serv *malv2service) GetAnimeByTitle(title string) (as.AnimeStruct, error) {
 	if err := serv.verifyToken(); err != nil {
 		serv.logger.Errorf("Error verifying token %s", err.Error())
-		return nil, err
+		return as.AnimeStruct{}, err
 	}
 
 	resp, err := serv.client.R().
@@ -64,24 +64,24 @@ func (serv *malv2service) GetAnimeByTitle(title string) (*as.AnimeStruct, error)
 		Get(basePath + "/anime")
 	if err != nil {
 		serv.logger.Errorf("Error sending request %s", err.Error())
-		return nil, err
+		return as.AnimeStruct{}, err
 	}
 
 	var respJson AnimePlainResponse
 	if err := json.Unmarshal(resp.Body(), &respJson); err != nil {
 		serv.logger.Errorf("Error unmarshalling response to json, error %s", err.Error())
-		return nil, err
+		return as.AnimeStruct{}, err
 	}
 
 	desEntry := respJson.Data[0].AnimeEntry
-	return &as.AnimeStruct{
+	return as.AnimeStruct{
 		Title:    desEntry.Title,
 		Id:       desEntry.ID,
 		ImageUrl: desEntry.MainPicture.Large,
 	}, nil
 }
 
-func (serv *malv2service) GetUserAnimeList() ([]*as.AnimeStruct, error) {
+func (serv *malv2service) GetUserAnimeList() ([]as.AnimeStruct, error) {
 	if err := serv.verifyToken(); err != nil {
 		serv.logger.Errorf("Error verifying token %s", err.Error())
 		return nil, err
@@ -111,7 +111,7 @@ func (serv *malv2service) GetUserAnimeList() ([]*as.AnimeStruct, error) {
 		return nil, err
 	}
 
-	var animeList []*as.AnimeStruct
+	var animeList []as.AnimeStruct
 	for _, v := range respJson.Data {
 		entry := v.AnimeEntry
 

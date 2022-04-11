@@ -10,12 +10,11 @@ import (
 )
 
 type AnimeFeeder interface {
-	UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct, err error)
+	UpdateList() (missingInCachedOutput []animeservice.AnimeStruct, missingInNewOutput []animeservice.AnimeStruct, err error)
 	FindLatestReleases() []LatestReleases
 }
 
 type LatestReleases struct {
-	Anime    *animeservice.AnimeStruct
 	AnimeUrl animeurlfinder.AnimeUrlInfo
 	SubsUrl  animesubs.SubsInfo
 }
@@ -50,7 +49,7 @@ func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.
 	return af
 }
 
-func (af *animeFeeder) UpdateList() (missingInCachedOutput []*animeservice.AnimeStruct, missingInNewOutput []*animeservice.AnimeStruct, err error) {
+func (af *animeFeeder) UpdateList() (missingInCachedOutput []animeservice.AnimeStruct, missingInNewOutput []animeservice.AnimeStruct, err error) {
 	curList, err := af.animeService.GetUserAnimeList()
 	if err != nil {
 		return nil, nil, err
@@ -95,7 +94,6 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 
 		if animeUrl.Url != "" || animeSub.Url != "" {
 			releases = append(releases, LatestReleases{
-				Anime:    entry,
 				AnimeUrl: animeUrl,
 				SubsUrl:  animeSub,
 			})

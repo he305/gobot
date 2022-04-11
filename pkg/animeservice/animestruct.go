@@ -47,8 +47,8 @@ type AnimeStruct struct {
 	ImageUrl     string
 }
 
-func NewAnimeStruct(id int, title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8, imageUrl string) *AnimeStruct {
-	return &AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, ListRating: listRating, EndTime: endTime, AiringStatus: airingStatus, ListStatus: listStatus, ImageUrl: imageUrl}
+func NewAnimeStruct(id int, title string, synonyms []string, startDate time.Time, endTime time.Time, listRating float64, airingStatus uint8, listStatus uint8, imageUrl string) AnimeStruct {
+	return AnimeStruct{Id: id, Title: title, Synonyms: synonyms, StartDate: startDate, ListRating: listRating, EndTime: endTime, AiringStatus: airingStatus, ListStatus: listStatus, ImageUrl: imageUrl}
 }
 
 func (a AnimeStruct) VerboseOutput() string {

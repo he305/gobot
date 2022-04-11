@@ -5,15 +5,15 @@ import (
 )
 
 type AnimeList struct {
-	list []*as.AnimeStruct
+	list []as.AnimeStruct
 }
 
 func NewAnimeList() *AnimeList {
-	return &AnimeList{list: make([]*as.AnimeStruct, 0)}
+	return &AnimeList{list: make([]as.AnimeStruct, 0)}
 }
 
-func (alist *AnimeList) FilterByListStatus(statuses ...uint8) []*as.AnimeStruct {
-	var filteredList []*as.AnimeStruct
+func (alist *AnimeList) FilterByListStatus(statuses ...uint8) []as.AnimeStruct {
+	var filteredList []as.AnimeStruct
 
 	for _, entry := range alist.list {
 		for _, status := range statuses {
@@ -26,12 +26,12 @@ func (alist *AnimeList) FilterByListStatus(statuses ...uint8) []*as.AnimeStruct 
 	return filteredList
 }
 
-func (alist *AnimeList) SetNewList(list []*as.AnimeStruct) {
+func (alist *AnimeList) SetNewList(list []as.AnimeStruct) {
 	alist.list = list
 }
 
-func findMissingEntriesInFirstList(firstList []*as.AnimeStruct, secondList []*as.AnimeStruct) []*as.AnimeStruct {
-	var missing []*as.AnimeStruct
+func findMissingEntriesInFirstList(firstList []as.AnimeStruct, secondList []as.AnimeStruct) []as.AnimeStruct {
+	var missing []as.AnimeStruct
 
 	for _, entrySecond := range secondList {
 		found := false
@@ -49,7 +49,7 @@ func findMissingEntriesInFirstList(firstList []*as.AnimeStruct, secondList []*as
 	return missing
 }
 
-func (alist *AnimeList) FindMissingInBothLists(list []*as.AnimeStruct) ([]*as.AnimeStruct, []*as.AnimeStruct) {
+func (alist *AnimeList) FindMissingInBothLists(list []as.AnimeStruct) ([]as.AnimeStruct, []as.AnimeStruct) {
 	missingInThisList := findMissingEntriesInFirstList(alist.list, list)
 	missingInArg := findMissingEntriesInFirstList(list, alist.list)
 

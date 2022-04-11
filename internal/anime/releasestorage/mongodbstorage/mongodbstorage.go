@@ -144,7 +144,6 @@ func (m *mongodbstorage) readCollection(collectionName string) ([]animefeeder.La
 
 	for _, entry := range allEntries {
 		animeUrlEntries = append(animeUrlEntries, animefeeder.LatestReleases{
-			Anime: nil,
 			AnimeUrl: animeurlfinder.AnimeUrlInfo{
 				Title:       entry.AnimeTitle,
 				Url:         entry.AnimeUrl,

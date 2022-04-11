@@ -46,8 +46,9 @@ func initLogger() {
 	logging.InitLoggerConfig(rawJson)
 }
 
-func getInfoForPrinting(animeFeeder animefeeder.AnimeFeeder, storage releasestorage.ReleaseStorage) (st string) {
+func getInfoForPrinting(animeFeeder animefeeder.AnimeFeeder, storage releasestorage.ReleaseStorage, stChan chan string) {
 
+	var st string
 	missingInCached, missingInNew, err := animeFeeder.UpdateList()
 	if err != nil {
 		logger.Errorf("Feeder couldn't update list, error %v", err)
@@ -74,14 +75,14 @@ func getInfoForPrinting(animeFeeder animefeeder.AnimeFeeder, storage releasestor
 
 	for _, v := range newReleases {
 		if v.AnimeUrl.Url != "" {
-			st += fmt.Sprintf("New release for %s\nanime url: %s\n", v.Anime.Title, v.AnimeUrl.Url)
+			st += fmt.Sprintf("New release for anime url: %s\n", v.AnimeUrl.Url)
 		}
 		if v.SubsUrl.Url != "" {
-			st += fmt.Sprintf("New subs for %s\nurl: %s\n", v.Anime.Title, v.SubsUrl.Url)
+			st += fmt.Sprintf("New subs for url: %s\n", v.SubsUrl.Url)
 		}
 	}
 
-	return st
+	stChan <- st
 }
 
 func createPath(path string) error {
@@ -124,8 +125,8 @@ func Run() {
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
 	fileIo := fileio.NewDefaultFileIO()
-	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 5*time.Minute)
-	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 5*time.Minute, logger)
+	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 3*time.Minute)
+	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 3*time.Minute, logger)
 
 	storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
 	if err != nil {
@@ -153,14 +154,17 @@ func Run() {
 
 	go func() {
 		for {
-			st := getInfoForPrinting(animeFeeder, storage)
+			stChan := make(chan string)
+			go getInfoForPrinting(animeFeeder, storage, stChan)
+
+			st := <-stChan
 
 			if st != "" {
 				msg := tgbot.NewMessage(telegramChatId, st)
 				bot.Send(msg)
 			}
 
-			time.Sleep(3 * time.Minute)
+			time.Sleep(time.Minute * 3)
 		}
 	}()
 

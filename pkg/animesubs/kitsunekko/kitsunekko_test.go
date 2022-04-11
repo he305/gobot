@@ -184,7 +184,6 @@ Sort by: <a href='/dirlist.php?dir=subtitles/japanese/&amp;sort=name&amp;order=d
 func newTestPrepareScrapper() (*kitsunekkoScrapper, *httptest.Server) {
 	serv := newTestSever()
 	return &kitsunekkoScrapper{logger: zap.L().Sugar(),
-		collector:       configureKitsunekkoCollyCollector(),
 		updateTimer:     0,
 		cachedFilePath:  serv.URL + "/mainpage",
 		lastTimeUpdated: time.Unix(0, 0),
@@ -488,7 +487,7 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestCollyCollectorSettings(t *testing.T) {
-	collector := configureKitsunekkoCollyCollector()
+	collector := getNewKitsunekkoCollyCollector()
 	if !collector.AllowURLRevisit ||
 		len(collector.URLFilters) != 0 {
 		t.Errorf("Wrong colly collector configuration")

@@ -17,7 +17,6 @@ func TestFormStringFromLatestReleases(t *testing.T) {
 		"https://anotherlink.com$%21"
 
 	data := animefeeder.LatestReleases{
-		Anime: nil,
 		AnimeUrl: animeurlfinder.AnimeUrlInfo{
 			Title:       "Shingeki no kyoujin - 12",
 			TimeUpdated: time.Unix(1649262976, 0),
