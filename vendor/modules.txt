@@ -1,5 +1,3 @@
-# github.com/Bowery/prompt v0.0.0-20190916142128-fa8279994f75
-## explicit
 # github.com/PuerkitoBio/goquery v1.8.0
 ## explicit; go 1.13
 github.com/PuerkitoBio/goquery
@@ -15,8 +13,6 @@ github.com/antchfx/xmlquery
 # github.com/antchfx/xpath v1.2.0
 ## explicit; go 1.14
 github.com/antchfx/xpath
-# github.com/dchest/safefile v0.0.0-20151022103144-855e8d98f185
-## explicit
 # github.com/fsnotify/fsnotify v1.5.1
 ## explicit; go 1.13
 github.com/fsnotify/fsnotify
@@ -53,8 +49,6 @@ github.com/golang/protobuf/proto
 # github.com/golang/snappy v0.0.1
 ## explicit
 github.com/golang/snappy
-# github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-## explicit; go 1.13
 # github.com/hashicorp/hcl v1.0.0
 ## explicit
 github.com/hashicorp/hcl
@@ -67,8 +61,6 @@ github.com/hashicorp/hcl/hcl/token
 github.com/hashicorp/hcl/json/parser
 github.com/hashicorp/hcl/json/scanner
 github.com/hashicorp/hcl/json/token
-# github.com/jawher/mow.cli v1.2.0
-## explicit; go 1.13
 # github.com/joho/godotenv v1.4.0
 ## explicit; go 1.12
 github.com/joho/godotenv
@@ -78,8 +70,6 @@ github.com/json-iterator/go
 # github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
 ## explicit; go 1.15
 github.com/ka-weihe/fast-levenshtein
-# github.com/kardianos/govendor v1.0.9
-## explicit
 # github.com/kennygrant/sanitize v1.2.4
 ## explicit
 github.com/kennygrant/sanitize
@@ -91,14 +81,8 @@ github.com/klauspost/compress/huff0
 github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
-# github.com/kr/fs v0.1.0
-## explicit
-# github.com/kr/godep v0.0.0-20180126220526-ce0bfadeb516
-## explicit
 # github.com/kr/pretty v0.3.0
 ## explicit; go 1.12
-# github.com/kr/text v0.2.0
-## explicit
 # github.com/magiconair/properties v1.8.5
 ## explicit; go 1.13
 github.com/magiconair/properties
@@ -128,8 +112,6 @@ github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# github.com/pmezard/go-difflib v1.0.0
-## explicit
 # github.com/rogpeppe/go-internal v1.8.1
 ## explicit; go 1.16
 # github.com/saintfish/chardet v0.0.0-20120816061221-3af4cd4741ca
@@ -162,8 +144,6 @@ github.com/subosito/gotenv
 # github.com/temoto/robotstxt v1.1.2
 ## explicit; go 1.11
 github.com/temoto/robotstxt
-# github.com/tools/godep v0.0.0-20180126220526-ce0bfadeb516
-## explicit
 # github.com/xdg-go/pbkdf2 v1.0.0
 ## explicit; go 1.9
 github.com/xdg-go/pbkdf2
@@ -264,8 +244,6 @@ golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
 golang.org/x/text/unicode/norm
-# golang.org/x/tools v0.1.10
-## explicit; go 1.17
 # google.golang.org/appengine v1.6.7
 ## explicit; go 1.11
 google.golang.org/appengine/internal
@@ -304,8 +282,6 @@ google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
 google.golang.org/protobuf/types/descriptorpb
-# gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
-## explicit
 # gopkg.in/ini.v1 v1.66.2
 ## explicit
 gopkg.in/ini.v1
