@@ -4,3 +4,4 @@ storage/
 cache/
 cover.out
 .env
+.idea/
