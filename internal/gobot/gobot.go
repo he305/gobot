@@ -8,9 +8,8 @@ import (
 	"gobot/internal/anime/releasestorage/mongodbstorage"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animeservice/malv2service"
-	"gobot/pkg/animesubs/kitsunekko"
+	"gobot/pkg/animesubs/kitsunekkov2"
 	"gobot/pkg/animeurlfinder/subspleaserss"
-	"gobot/pkg/fileio"
 	"gobot/pkg/logging"
 	"log"
 	"os"
@@ -78,11 +77,12 @@ func getInfoForPrinting(animeFeeder animefeeder.AnimeFeeder, storage releasestor
 			st += fmt.Sprintf("New release for anime url: %s\n", v.AnimeUrl.Url)
 		}
 		if v.SubsUrl.Url != "" {
-			st += fmt.Sprintf("New subs for url: %s\n", v.SubsUrl.Url)
+			st += fmt.Sprintf("New subs url: %s\n", v.SubsUrl.Url)
 		}
 	}
 
 	stChan <- st
+	close(stChan)
 }
 
 func createPath(path string) error {
@@ -124,8 +124,9 @@ func Run() {
 	}
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
-	fileIo := fileio.NewDefaultFileIO()
-	kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 3*time.Minute)
+	//fileIo := fileio.NewDefaultFileIO()
+	//kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 3*time.Minute)
+	kitsunekkoSubService := kitsunekkov2.NewKitsunekkoScrapperV2(3 * time.Minute, logger)
 	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 3*time.Minute, logger)
 
 	storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
