@@ -486,10 +486,3 @@ func TestConstructor(t *testing.T) {
 	}
 }
 
-func TestCollyCollectorSettings(t *testing.T) {
-	collector := getNewKitsunekkoCollyCollector()
-	if !collector.AllowURLRevisit ||
-		len(collector.URLFilters) != 0 {
-		t.Errorf("Wrong colly collector configuration")
-	}
-}
