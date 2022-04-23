@@ -14,9 +14,9 @@ import (
 )
 
 type kitsunekkoScrapperV2 struct {
-	logger          *zap.SugaredLogger
+	logger     *zap.SugaredLogger
 	timeUpdate time.Duration
-	webkeeper webpagekeeper.WebPageKeeper
+	webkeeper  webpagekeeper.WebPageKeeper
 }
 
 type pageEntry struct {
@@ -45,10 +45,10 @@ func parseKitsunekkoTime(timeString string) (time.Time, error) {
 }
 
 func NewKitsunekkoScrapperV2(timeUpdate time.Duration, logger *zap.SugaredLogger) animesubs.AnimeSubsService {
-	return &kitsunekkoScrapperV2 {
-		logger: logger,
+	return &kitsunekkoScrapperV2{
+		logger:     logger,
 		timeUpdate: timeUpdate,
-		webkeeper: webpagekeeper.NewWebPageKeeper(timeUpdate, logger),
+		webkeeper:  webpagekeeper.NewWebPageKeeper(timeUpdate, logger),
 	}
 }
 
@@ -80,11 +80,10 @@ func (serv *kitsunekkoScrapperV2) parseRowToEntry(s *goquery.Selection) pageEntr
 		return pageEntry{}
 	}
 
-
 	return pageEntry{
-		text: text,
+		text:        text,
 		timeUpdated: parsedTime,
-		url: urlRaw,
+		url:         urlRaw,
 	}
 }
 
@@ -168,7 +167,7 @@ func (serv *kitsunekkoScrapperV2) getLatestAnimeEntry(url string) (pageEntry, er
 	lastEntry := serv.findLatestPageEntry(allEntries)
 	return lastEntry, nil
 }
- 
+
 func (serv *kitsunekkoScrapperV2) GetUrlLatestSubForAnime(titlesWithSynonyms []string) animesubs.SubsInfo {
 	requiredUrl, err := serv.getRequiredAnimeUrl(titlesWithSynonyms)
 	if err != nil {
@@ -182,7 +181,7 @@ func (serv *kitsunekkoScrapperV2) GetUrlLatestSubForAnime(titlesWithSynonyms []s
 
 	entry, err := serv.getLatestAnimeEntry(kitsunekkoBaseUrl + requiredUrl)
 	if err != nil {
-		serv.logger.Errorf("Got error trying to get %v, error: %v", kitsunekkoBaseUrl + requiredUrl, err)
+		serv.logger.Errorf("Got error trying to get %v, error: %v", kitsunekkoBaseUrl+requiredUrl, err)
 		return animesubs.SubsInfo{}
 	}
 
@@ -190,7 +189,7 @@ func (serv *kitsunekkoScrapperV2) GetUrlLatestSubForAnime(titlesWithSynonyms []s
 		serv.logger.Debugf("No entry was found for %v", titlesWithSynonyms[0])
 		return animesubs.SubsInfo{}
 	}
-	
+
 	if entry.url[0] != '/' {
 		entry.url = "/" + entry.url
 	}
@@ -202,8 +201,8 @@ func (serv *kitsunekkoScrapperV2) GetUrlLatestSubForAnime(titlesWithSynonyms []s
 	}
 
 	return animesubs.SubsInfo{
-		Title: entry.text,
+		Title:       entry.text,
 		TimeUpdated: entry.timeUpdated,
-		Url: url.String(),
+		Url:         url.String(),
 	}
 }

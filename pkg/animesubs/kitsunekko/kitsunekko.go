@@ -22,7 +22,7 @@ type kitsunekkoScrapper struct {
 	cachedFilePath  string
 	cachedVisitUrl  string
 	fileIo          fileio.FileIO
-	collector *colly.Collector
+	collector       *colly.Collector
 }
 
 type pageEntry struct {
@@ -59,7 +59,7 @@ func NewKitsunekkoScrapper(fileIo fileio.FileIO, cachedFilePath string, updateTi
 		lastTimeUpdated: time.Unix(0, 0),
 		cachedVisitUrl:  "file://" + cachedFilePath,
 		fileIo:          fileIo,
-		collector: getNewKitsunekkoCollyCollector(),
+		collector:       getNewKitsunekkoCollyCollector(),
 	}
 }
 
@@ -131,7 +131,7 @@ func (ws *kitsunekkoScrapper) getAllEntriesOnPage(path string) ([]pageEntry, err
 	var allEntries []pageEntry
 
 	collector := getNewKitsunekkoCollyCollector()
-	
+
 	collector.OnHTML("a[href]", func(e *colly.HTMLElement) {
 		parsedEntry, err := ws.processPageElement(e)
 		if err != nil {

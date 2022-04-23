@@ -119,11 +119,11 @@ func newTestSever() *httptest.Server {
 
 func prepareWebPageKeeper() (*webpagekeeper, *httptest.Server) {
 	server := newTestSever()
-	wpk := &webpagekeeper {
-		timeToUpdate: duration,
+	wpk := &webpagekeeper{
+		timeToUpdate:   duration,
 		cachedWebPages: []webPage{},
-		logger: zap.L().Sugar(),
-	} 
+		logger:         zap.L().Sugar(),
+	}
 
 	return wpk, server
 }
@@ -134,7 +134,7 @@ func TestGetUrlBody(t *testing.T) {
 	wpk, serv := prepareWebPageKeeper()
 
 	expected := data
-	actual, err := wpk.GetUrlBody(serv.URL + "/data", false)
+	actual, err := wpk.GetUrlBody(serv.URL+"/data", false)
 	assert.NoError(err)
 
 	assert.Equal(len(actual), len(expected))
@@ -145,10 +145,10 @@ func TestGetWebPageValid(t *testing.T) {
 
 	wpk, serv := prepareWebPageKeeper()
 
-	expected := webPage {
-		url : serv.URL + "/data",
+	expected := webPage{
+		url:         serv.URL + "/data",
 		timeUpdated: time.Now(),
-		body: []byte(data),
+		body:        []byte(data),
 	}
 
 	actual, err := wpk.getWebPage(serv.URL + "/data")
@@ -164,10 +164,9 @@ func TestGetWebPageWrongUrl(t *testing.T) {
 
 	wpk, serv := prepareWebPageKeeper()
 
-	expected := webPage {
-	}
+	expected := webPage{}
 
-	actual, err := wpk.getWebPage(serv.URL+ "/crap")
+	actual, err := wpk.getWebPage(serv.URL + "/crap")
 	assert.Error(err)
 
 	assert.Equal(expected.url, actual.url)
@@ -180,8 +179,7 @@ func TestGetWebPageNonExistingUrl(t *testing.T) {
 
 	wpk, _ := prepareWebPageKeeper()
 
-	expected := webPage {
-	}
+	expected := webPage{}
 
 	actual, err := wpk.getWebPage("crap")
 	assert.Error(err)
@@ -197,7 +195,7 @@ func TestGetUrlBodyError(t *testing.T) {
 	wpk, serv := prepareWebPageKeeper()
 
 	var expected []byte
-	actual, err := wpk.GetUrlBody(serv.URL + "/crap", false)
+	actual, err := wpk.GetUrlBody(serv.URL+"/crap", false)
 	assert.Error(err)
 
 	assert.Equal(len(actual), len(expected))
@@ -209,10 +207,10 @@ func TestGetUrlTestSave(t *testing.T) {
 	wpk, serv := prepareWebPageKeeper()
 
 	expected := data
-	_, err := wpk.GetUrlBody(serv.URL + "/data", true)
+	_, err := wpk.GetUrlBody(serv.URL+"/data", true)
 	assert.NoError(err)
 
-	actual, err := wpk.GetUrlBody(serv.URL + "/data", true)
+	actual, err := wpk.GetUrlBody(serv.URL+"/data", true)
 	assert.NoError(err)
 
 	assert.Equal(len(actual), len(expected))
@@ -224,11 +222,11 @@ func TestGetUrlTestSaveUpdate(t *testing.T) {
 	wpk, serv := prepareWebPageKeeper()
 
 	expected := data
-	_, err := wpk.GetUrlBody(serv.URL + "/data", true)
+	_, err := wpk.GetUrlBody(serv.URL+"/data", true)
 	assert.NoError(err)
 
-	time.Sleep(duration + 10 * time.Millisecond)
-	actual, err := wpk.GetUrlBody(serv.URL + "/data", true)
+	time.Sleep(duration + 10*time.Millisecond)
+	actual, err := wpk.GetUrlBody(serv.URL+"/data", true)
 	assert.NoError(err)
 
 	assert.Equal(len(actual), len(expected))
@@ -240,12 +238,12 @@ func TestGetUrlTestSaveUpdateError(t *testing.T) {
 	wpk, serv := prepareWebPageKeeper()
 
 	var expected []byte
-	_, err := wpk.GetUrlBody(serv.URL + "/data", true)
+	_, err := wpk.GetUrlBody(serv.URL+"/data", true)
 	assert.NoError(err)
 
 	serv.Close()
-	time.Sleep(duration + 10 * time.Millisecond)
-	actual, err := wpk.GetUrlBody(serv.URL + "/data", true)
+	time.Sleep(duration + 10*time.Millisecond)
+	actual, err := wpk.GetUrlBody(serv.URL+"/data", true)
 	assert.Error(err)
 
 	assert.Equal(len(actual), len(expected))

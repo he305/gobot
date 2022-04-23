@@ -5,3 +5,4 @@ cache/
 cover.out
 .env
 .idea/
+dist/

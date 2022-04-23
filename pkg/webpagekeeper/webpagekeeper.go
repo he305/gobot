@@ -14,15 +14,15 @@ type WebPageKeeper interface {
 }
 
 type webPage struct {
-	url string
-	timeUpdated time.Time;
-	body []byte
+	url         string
+	timeUpdated time.Time
+	body        []byte
 }
 
 type webpagekeeper struct {
-	timeToUpdate time.Duration;
+	timeToUpdate   time.Duration
 	cachedWebPages []webPage
-	logger *zap.SugaredLogger
+	logger         *zap.SugaredLogger
 }
 
 var _ WebPageKeeper = (*webpagekeeper)(nil)
@@ -38,7 +38,7 @@ func (wpk *webpagekeeper) getWebPage(url string) (webPage, error) {
 	}
 
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != 200 {
 		return webPage{}, fmt.Errorf("Couldn't get page %s, status code: %d", url, resp.StatusCode)
 	}
@@ -48,10 +48,9 @@ func (wpk *webpagekeeper) getWebPage(url string) (webPage, error) {
 		return webPage{}, err
 	}
 
-
-	return webPage {
-		url: url,
-		body: body,
+	return webPage{
+		url:         url,
+		body:        body,
 		timeUpdated: time.Now(),
 	}, nil
 

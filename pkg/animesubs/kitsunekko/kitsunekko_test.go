@@ -485,4 +485,3 @@ func TestConstructor(t *testing.T) {
 		t.Errorf("Returned nil object")
 	}
 }
-

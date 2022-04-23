@@ -166,9 +166,9 @@ func newTestSever() *httptest.Server {
 func prepareForTests() (*kitsunekkoScrapperV2, *httptest.Server) {
 	serv := newTestSever()
 	kserv := &kitsunekkoScrapperV2{
-		logger: zap.L().Sugar(),
+		logger:     zap.L().Sugar(),
 		timeUpdate: duration,
-		webkeeper: webpagekeeper.NewWebPageKeeper(duration, zap.L().Sugar()),
+		webkeeper:  webpagekeeper.NewWebPageKeeper(duration, zap.L().Sugar()),
 	}
 
 	return kserv, serv
@@ -179,19 +179,18 @@ func TestGetAllEntriesValid(t *testing.T) {
 
 	kits, serv := prepareForTests()
 
-
-	body, err := kits.webkeeper.GetUrlBody(serv.URL + "/data", false)
+	body, err := kits.webkeeper.GetUrlBody(serv.URL+"/data", false)
 	assert.NoError(err)
 
 	entries, err := kits.getAllEntries(body)
 	assert.NoError(err)
 
 	assert.Equal(len(entries), 6)
-	parsedTime, err :=  parseKitsunekkoTime("Apr 03 2022 06:38:03 PM")
+	parsedTime, err := parseKitsunekkoTime("Apr 03 2022 06:38:03 PM")
 	assert.NoError(err)
-	expected := pageEntry {
-		url: "/titosi",
-		text: "Shingeki No Kyojin",
+	expected := pageEntry{
+		url:         "/titosi",
+		text:        "Shingeki No Kyojin",
 		timeUpdated: parsedTime,
 	}
 
@@ -207,7 +206,6 @@ func TestGetLatestEntry(t *testing.T) {
 	assert.NoError(err)
 
 	expected := "/titosi"
-	
 
 	assert.Equal(actual, expected)
 }
@@ -229,7 +227,7 @@ func TestGetAllEntriesNoUrl(t *testing.T) {
 	assert := assert.New(t)
 
 	kits, serv := prepareForTests()
-	body, err := kits.webkeeper.GetUrlBody(serv.URL + "/brokenDataWithoutUrl", false)
+	body, err := kits.webkeeper.GetUrlBody(serv.URL+"/brokenDataWithoutUrl", false)
 	assert.NoError(err)
 	entries, err := kits.getAllEntries(body)
 	assert.NoError(err)
@@ -240,7 +238,7 @@ func TestGetAllEntriesNoDate(t *testing.T) {
 	assert := assert.New(t)
 
 	kits, serv := prepareForTests()
-	body, err := kits.webkeeper.GetUrlBody(serv.URL + "/brokenDataWithoutDate", false)
+	body, err := kits.webkeeper.GetUrlBody(serv.URL+"/brokenDataWithoutDate", false)
 	assert.NoError(err)
 	entries, err := kits.getAllEntries(body)
 	assert.NoError(err)
@@ -251,7 +249,7 @@ func TestGetAllEntriesNoTime(t *testing.T) {
 	assert := assert.New(t)
 
 	kits, serv := prepareForTests()
-	body, err := kits.webkeeper.GetUrlBody(serv.URL + "/brokenDataWrongTime", false)
+	body, err := kits.webkeeper.GetUrlBody(serv.URL+"/brokenDataWrongTime", false)
 	assert.NoError(err)
 	entries, err := kits.getAllEntries(body)
 	assert.NoError(err)
@@ -269,9 +267,9 @@ func TestGetLatestAnimeEntry(t *testing.T) {
 	rawTime := "Apr 03 2022 06:38:04 PM"
 	parsedTime, err := parseKitsunekkoTime(rawTime)
 	assert.NoError(err)
-	expected := pageEntry {
-		text: "Shingeki No Kyojin 097.srt",
-		url: "subtitles/japanese/Shingeki_No_Kyojin/Shingeki_No_Kyojin_097.srt",
+	expected := pageEntry{
+		text:        "Shingeki No Kyojin 097.srt",
+		url:         "subtitles/japanese/Shingeki_No_Kyojin/Shingeki_No_Kyojin_097.srt",
 		timeUpdated: parsedTime,
 	}
 
@@ -290,9 +288,9 @@ func TestGetUrlLatestSubForAnimeValid(t *testing.T) {
 	parsedTime, err := parseKitsunekkoTime(rawTime)
 	assert.NoError(err)
 
-	expected := animesubs.SubsInfo {
-		Title: "Shingeki No Kyojin 097.srt",
-		Url: kitsunekkoBaseUrl + "/subtitles/japanese/Shingeki_No_Kyojin/Shingeki_No_Kyojin_097.srt",
+	expected := animesubs.SubsInfo{
+		Title:       "Shingeki No Kyojin 097.srt",
+		Url:         kitsunekkoBaseUrl + "/subtitles/japanese/Shingeki_No_Kyojin/Shingeki_No_Kyojin_097.srt",
 		TimeUpdated: parsedTime,
 	}
 

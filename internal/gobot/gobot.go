@@ -126,7 +126,7 @@ func Run() {
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
 	//fileIo := fileio.NewDefaultFileIO()
 	//kitsunekkoSubService := kitsunekko.NewKitsunekkoScrapper(fileIo, kitsunekkoCachePath, 3*time.Minute)
-	kitsunekkoSubService := kitsunekkov2.NewKitsunekkoScrapperV2(3 * time.Minute, logger)
+	kitsunekkoSubService := kitsunekkov2.NewKitsunekkoScrapperV2(3*time.Minute, logger)
 	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 3*time.Minute, logger)
 
 	storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
