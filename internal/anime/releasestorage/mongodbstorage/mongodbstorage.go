@@ -5,7 +5,7 @@ import (
 	"gobot/internal/anime/animefeeder"
 	"gobot/internal/anime/releasestorage"
 	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/animeurlservice"
 	"os"
 	"time"
 
@@ -144,7 +144,7 @@ func (m *mongodbstorage) readCollection(collectionName string) ([]animefeeder.La
 
 	for _, entry := range allEntries {
 		animeUrlEntries = append(animeUrlEntries, animefeeder.LatestReleases{
-			AnimeUrl: animeurlfinder.AnimeUrlInfo{
+			AnimeUrl: animeurlservice.AnimeUrlInfo{
 				Title:       entry.AnimeTitle,
 				Url:         entry.AnimeUrl,
 				TimeUpdated: time.Unix(entry.AnimeTime, 0),

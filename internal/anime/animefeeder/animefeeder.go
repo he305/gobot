@@ -2,9 +2,11 @@ package animefeeder
 
 import (
 	"gobot/internal/anime"
+	"gobot/internal/anime/animesubsrepository"
+	"gobot/internal/anime/animeurlrepository"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/animeurlservice"
 
 	"go.uber.org/zap"
 )
@@ -15,7 +17,8 @@ type AnimeFeeder interface {
 }
 
 type LatestReleases struct {
-	AnimeUrl animeurlfinder.AnimeUrlInfo
+	Title    string
+	AnimeUrl animeurlservice.AnimeUrlInfo
 	SubsUrl  animesubs.SubsInfo
 }
 
@@ -25,18 +28,31 @@ func (l LatestReleases) Equal(other LatestReleases) bool {
 }
 
 type animeFeeder struct {
-	animeService     animeservice.AnimeService
-	subServive       animesubs.AnimeSubsService
-	animeUrlFinder   animeurlfinder.AnimeUrlFinder
-	cachedList       *anime.AnimeList
-	logger           *zap.SugaredLogger
-	initialListError bool
+	animeService        animeservice.AnimeService
+	subServive          animesubs.AnimeSubsService
+	animeUrlFinder      animeurlservice.AnimeUrlService
+	animeUrlRepository  animeurlrepository.AnimeUrlRepository
+	animeSubsRepository animesubsrepository.AnimeSubsRepository
+	cachedList          *anime.AnimeList
+	logger              *zap.SugaredLogger
+	initialListError    bool
 }
 
 var _ AnimeFeeder = (*animeFeeder)(nil)
 
-func NewAnimeFeeder(animeService animeservice.AnimeService, animesubs animesubs.AnimeSubsService, animeurlfinder animeurlfinder.AnimeUrlFinder, logger *zap.SugaredLogger) AnimeFeeder {
-	af := &animeFeeder{animeService: animeService, cachedList: anime.NewAnimeList(), subServive: animesubs, animeUrlFinder: animeurlfinder, logger: logger}
+func NewAnimeFeeder(animeService animeservice.AnimeService,
+	animesubs animesubs.AnimeSubsService,
+	animeurlfinder animeurlservice.AnimeUrlService,
+	animeUrlRepository animeurlrepository.AnimeUrlRepository,
+	animeSubsRepository animesubsrepository.AnimeSubsRepository,
+	logger *zap.SugaredLogger) AnimeFeeder {
+	af := &animeFeeder{animeService: animeService,
+		cachedList:          anime.NewAnimeList(),
+		subServive:          animesubs,
+		animeUrlFinder:      animeurlfinder,
+		animeUrlRepository:  animeUrlRepository,
+		animeSubsRepository: animeSubsRepository,
+		logger:              logger}
 	animeList, err := af.animeService.GetUserAnimeList()
 	if err != nil {
 		af.logger.Errorf("Error getting initial animelist")
@@ -73,6 +89,40 @@ func (af *animeFeeder) UpdateList() (missingInCachedOutput []animeservice.AnimeS
 	return
 }
 
+func (af *animeFeeder) animeUrlExistInRepoOrNull(url animeurlservice.AnimeUrlInfo) bool {
+	if url.Title == "" {
+		return true
+	}
+
+	foundedAnimeUrl, err := af.animeUrlRepository.GetAnimeUrlByName(url.Title)
+	if err != nil {
+		af.logger.Errorf("Couldn't get info from anime repository, error: %v", err)
+		return true
+	}
+	if foundedAnimeUrl.Url != "" {
+		return true
+	}
+
+	return false
+}
+
+func (af *animeFeeder) animeSubsExistInRepoOrNull(subs animesubs.SubsInfo) bool {
+	if subs.Title == "" {
+		return true
+	}
+
+	foundedAnimeUrl, err := af.animeSubsRepository.GetAnimeSubsByName(subs.Title)
+	if err != nil {
+		af.logger.Errorf("Couldn't get info from subs repository, error: %v", err)
+		return true
+	}
+	if foundedAnimeUrl.Url != "" {
+		return true
+	}
+
+	return false
+}
+
 func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 	var releases []LatestReleases
 
@@ -80,9 +130,11 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 	// Get filtered list
 	filteredList := af.cachedList.FilterByListStatus(animeservice.PlannedToWatch, animeservice.Watching)
 
+	var newAnimeUrls []animeurlservice.AnimeUrlInfo
+	var newSubs []animesubs.SubsInfo
 	for _, entry := range filteredList {
 		// Check latest animeurl
-		animeUrlChan := make(chan animeurlfinder.AnimeUrlInfo)
+		animeUrlChan := make(chan animeurlservice.AnimeUrlInfo)
 		go af.getLatestUrlForTitleChan(entry.FormAllNamesArray(), animeUrlChan)
 
 		// Check latest subs
@@ -92,20 +144,45 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 		animeUrl := <-animeUrlChan
 		animeSub := <-animeSubChan
 
-		if animeUrl.Url != "" || animeSub.Url != "" {
+		isTrashAnimeUrl := af.animeUrlExistInRepoOrNull(animeUrl)
+
+		if !isTrashAnimeUrl {
+			newAnimeUrls = append(newAnimeUrls, animeUrl)
+		} else {
+			animeUrl = animeurlservice.AnimeUrlInfo{}
+		}
+
+		isTrashAnimeSubs := af.animeSubsExistInRepoOrNull(animeSub)
+
+		if !isTrashAnimeSubs {
+			newSubs = append(newSubs, animeSub)
+		} else {
+			animeSub = animesubs.SubsInfo{}
+		}
+
+		if !isTrashAnimeUrl || !isTrashAnimeSubs {
 			releases = append(releases, LatestReleases{
 				AnimeUrl: animeUrl,
 				SubsUrl:  animeSub,
+				Title:    entry.Title,
 			})
 		}
 	}
 
 	af.logger.Debug("Feeder finder ended")
 
+	if err := af.animeUrlRepository.AddAnimeUrls(newAnimeUrls...); err != nil {
+		af.logger.Errorf("Couldn't add %v anime urls to database, error: %v", len(newAnimeUrls), err)
+	}
+
+	if err := af.animeSubsRepository.AddAnimeSubs(newSubs...); err != nil {
+		af.logger.Errorf("Couldn't add %v subs urls to database, error: %v", len(newSubs), err)
+	}
+
 	return releases
 }
 
-func (af *animeFeeder) getLatestUrlForTitleChan(titles []string, urlChan chan animeurlfinder.AnimeUrlInfo) {
+func (af *animeFeeder) getLatestUrlForTitleChan(titles []string, urlChan chan animeurlservice.AnimeUrlInfo) {
 	data := af.animeUrlFinder.GetLatestUrlForTitle(titles...)
 	urlChan <- data
 	close(urlChan)

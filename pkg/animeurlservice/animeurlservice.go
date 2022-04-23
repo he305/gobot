@@ -1,4 +1,4 @@
-package animeurlfinder
+package animeurlservice
 
 import "time"
 
@@ -14,6 +14,6 @@ func (a AnimeUrlInfo) Equal(other AnimeUrlInfo) bool {
 		a.Url == other.Url
 }
 
-type AnimeUrlFinder interface {
+type AnimeUrlService interface {
 	GetLatestUrlForTitle(titlesWithSynonyms ...string) AnimeUrlInfo
 }

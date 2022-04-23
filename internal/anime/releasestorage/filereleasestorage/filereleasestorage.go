@@ -6,7 +6,7 @@ import (
 	"gobot/internal/anime/animefeeder"
 	"gobot/internal/anime/releasestorage"
 	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/animeurlservice"
 	"gobot/pkg/logging"
 	"os"
 	"strconv"
@@ -78,7 +78,7 @@ func (s *fileReleaseStorage) readStorage() {
 		parsedTimeSubUrl := time.Unix(rawTimeSubUrl, 0)
 
 		s.cachedLatestRealeases = append(s.cachedLatestRealeases, animefeeder.LatestReleases{
-			AnimeUrl: animeurlfinder.AnimeUrlInfo{
+			AnimeUrl: animeurlservice.AnimeUrlInfo{
 				Title:       splitted[0],
 				TimeUpdated: parsedTimeAnimeUrl,
 				Url:         splitted[2],

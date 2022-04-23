@@ -1,7 +1,7 @@
 package subspleaserss
 
 import (
-	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/animeurlservice"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -296,7 +296,7 @@ func TestGetLatestReleaseValid(t *testing.T) {
 	}
 	//Hanyou no Yashahime 3</title><link>https://3</link><guid isPermaLink="false">YC7Q3L2TRKWLIIWKZ57VI3ZKE73IHMS5</guid><pubDate>Fri,
 	//07 Apr 2022 08:47:24
-	expected := animeurlfinder.AnimeUrlInfo{
+	expected := animeurlservice.AnimeUrlInfo{
 		TimeUpdated: time.Date(2022, time.April, 7, 8, 47, 24, 0, time.UTC), //08 Apr 2022 01:20:40 +0000
 		Url:         "https://3",
 		Title:       "Hanyou no Yashahime 3",

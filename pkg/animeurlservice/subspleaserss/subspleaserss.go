@@ -1,7 +1,7 @@
 package subspleaserss
 
 import (
-	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/animeurlservice"
 	"gobot/pkg/stringutils"
 	"regexp"
 	"strings"
@@ -33,9 +33,9 @@ type subspleaserss struct {
 	feedUrl     string
 }
 
-var _ animeurlfinder.AnimeUrlFinder = (*subspleaserss)(nil)
+var _ animeurlservice.AnimeUrlService = (*subspleaserss)(nil)
 
-func NewSubsPleaseRss(feedUrl string, updateTimer time.Duration, logger *zap.SugaredLogger) animeurlfinder.AnimeUrlFinder {
+func NewSubsPleaseRss(feedUrl string, updateTimer time.Duration, logger *zap.SugaredLogger) animeurlservice.AnimeUrlService {
 	return &subspleaserss{
 		parser:      gofeed.NewParser(),
 		logger:      logger,
@@ -138,10 +138,10 @@ func findLatestPageEntry(entries []subsPleaseRssEntry) subsPleaseRssEntry {
 	return actualentry
 }
 
-func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms ...string) animeurlfinder.AnimeUrlInfo {
+func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms ...string) animeurlservice.AnimeUrlInfo {
 	if err := s.updateFeed(); err != nil {
 		s.logger.Errorf("Could parse subs please rss url, url : %s, error: %s", s.feedUrl, err.Error())
-		return animeurlfinder.AnimeUrlInfo{}
+		return animeurlservice.AnimeUrlInfo{}
 	}
 
 	normalizedRssTitles := s.getNormalizedRssEntries()
@@ -150,7 +150,7 @@ func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms ...string) anime
 
 	actualentry := findLatestPageEntry(filteredEntries)
 
-	return animeurlfinder.AnimeUrlInfo{
+	return animeurlservice.AnimeUrlInfo{
 		Title:       actualentry.RealText,
 		TimeUpdated: actualentry.TimeUpdated,
 		Url:         actualentry.Url,

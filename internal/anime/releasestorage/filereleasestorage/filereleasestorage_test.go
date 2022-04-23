@@ -3,7 +3,7 @@ package filereleasestorage
 import (
 	"gobot/internal/anime/animefeeder"
 	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlfinder"
+	"gobot/pkg/animeurlservice"
 	"testing"
 	"time"
 )
@@ -17,7 +17,7 @@ func TestFormStringFromLatestReleases(t *testing.T) {
 		"https://anotherlink.com$%21"
 
 	data := animefeeder.LatestReleases{
-		AnimeUrl: animeurlfinder.AnimeUrlInfo{
+		AnimeUrl: animeurlservice.AnimeUrlInfo{
 			Title:       "Shingeki no kyoujin - 12",
 			TimeUpdated: time.Unix(1649262976, 0),
 			Url:         "sample.com/123",

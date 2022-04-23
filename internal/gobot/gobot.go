@@ -1,15 +1,14 @@
 package gobot
 
 import (
-	"fmt"
 	"gobot/internal/anime/animefeeder"
-	"gobot/internal/anime/releasestorage"
-	"gobot/internal/anime/releasestorage/filereleasestorage"
-	"gobot/internal/anime/releasestorage/mongodbstorage"
-	"gobot/pkg/animeservice"
+	"gobot/internal/anime/animemessageprovider"
+	"gobot/internal/anime/animesubsrepository"
+	"gobot/internal/anime/animeurlrepository"
+	"gobot/internal/database/filedatabase"
 	"gobot/pkg/animeservice/malv2service"
 	"gobot/pkg/animesubs/kitsunekkov2"
-	"gobot/pkg/animeurlfinder/subspleaserss"
+	"gobot/pkg/animeurlservice/subspleaserss"
 	"gobot/pkg/logging"
 	"log"
 	"os"
@@ -45,40 +44,11 @@ func initLogger() {
 	logging.InitLoggerConfig(rawJson)
 }
 
-func getInfoForPrinting(animeFeeder animefeeder.AnimeFeeder, storage releasestorage.ReleaseStorage, stChan chan string) {
+func getInfoForPrinting(animeMessageProvider animemessageprovider.AnimeMessageProvider, stChan chan string) {
+	st, err := animeMessageProvider.GetMessage()
 
-	var st string
-	missingInCached, missingInNew, err := animeFeeder.UpdateList()
 	if err != nil {
-		logger.Errorf("Feeder couldn't update list, error %v", err)
-	}
-	if missingInCached != nil {
-		st += "New entries in list\n"
-		for _, v := range missingInCached {
-			st += v.VerboseOutput()
-			st += "\n"
-		}
-	}
-
-	if missingInNew != nil {
-		st += "Entries were deleted\n"
-		for _, v := range missingInNew {
-			v.ListStatus = animeservice.NotInList
-			st += v.VerboseOutput()
-			st += "\n"
-		}
-	}
-
-	latestReleases := animeFeeder.FindLatestReleases()
-	newReleases := storage.UpdateStorage(latestReleases)
-
-	for _, v := range newReleases {
-		if v.AnimeUrl.Url != "" {
-			st += fmt.Sprintf("New release for anime url: %s\n", v.AnimeUrl.Url)
-		}
-		if v.SubsUrl.Url != "" {
-			st += fmt.Sprintf("New subs url: %s\n", v.SubsUrl.Url)
-		}
+		logger.Errorf("Error getting message from anime message provider, error %v", err)
 	}
 
 	stChan <- st
@@ -115,12 +85,20 @@ func Run() {
 
 	kitsunekkoCachePath := viper.GetString("kitsunekkoCachePath")
 	releaseStoragePath := viper.GetString("releaseStoragePath")
+	animeUrlStoragePath := viper.GetString("animeUrlStoragePath")
+	animeSubsStoragePath := viper.GetString("animeSubsStoragePath")
 
 	if err := createPath(kitsunekkoCachePath); err != nil {
 		logger.Panicf("Couldn't create path %s, fatal error", kitsunekkoCachePath)
 	}
 	if err := createPath(releaseStoragePath); err != nil {
 		logger.Panicf("Couldn't create path %s, fatal error", releaseStoragePath)
+	}
+	if err := createPath(animeUrlStoragePath); err != nil {
+		logger.Panicf("Couldn't create path %s, fatal error", animeUrlStoragePath)
+	}
+	if err := createPath(animeSubsStoragePath); err != nil {
+		logger.Panicf("Couldn't create path %s, fatal error", animeSubsStoragePath)
 	}
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
@@ -129,14 +107,24 @@ func Run() {
 	kitsunekkoSubService := kitsunekkov2.NewKitsunekkoScrapperV2(3*time.Minute, logger)
 	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 3*time.Minute, logger)
 
-	storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
-	if err != nil {
-		logger.Error(err)
-		logger.Info("Using file storage")
-		storage = filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
-	}
+	// storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
+	// if err != nil {
+	// 	logger.Error(err)
+	// 	logger.Info("Using file storage")
+	// 	storage = filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
+	// }
 
-	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss, logger)
+	database := filedatabase.NewFileDatabase(
+		animeUrlStoragePath,
+		animeSubsStoragePath,
+	)
+
+	animeUrlRepo := animeurlrepository.NewAnimeUrlRepository(database)
+	animeSubsRepo := animesubsrepository.NewAnimeSubsRepository(database)
+
+	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss, animeUrlRepo, animeSubsRepo, logger)
+
+	animeMessageProvider := animemessageprovider.NewAnimeMessageProvider(animeFeeder)
 
 	debugMode := viper.GetBool("debugMode")
 	telegramToken := os.Getenv("telegramToken")
@@ -156,7 +144,7 @@ func Run() {
 	go func() {
 		for {
 			stChan := make(chan string)
-			go getInfoForPrinting(animeFeeder, storage, stChan)
+			go getInfoForPrinting(animeMessageProvider, stChan)
 
 			st := <-stChan
 
