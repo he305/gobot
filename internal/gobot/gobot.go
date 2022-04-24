@@ -5,7 +5,9 @@ import (
 	"gobot/internal/anime/animemessageprovider"
 	"gobot/internal/anime/animesubsrepository"
 	"gobot/internal/anime/animeurlrepository"
+	"gobot/internal/database"
 	"gobot/internal/database/filedatabase"
+	"gobot/internal/database/mongodatabase"
 	"gobot/pkg/animeservice/malv2service"
 	"gobot/pkg/animesubs/kitsunekkov2"
 	"gobot/pkg/animeurlservice/subspleaserss"
@@ -85,8 +87,12 @@ func Run() {
 
 	kitsunekkoCachePath := viper.GetString("kitsunekkoCachePath")
 	releaseStoragePath := viper.GetString("releaseStoragePath")
-	animeUrlStoragePath := viper.GetString("animeUrlStoragePath")
-	animeSubsStoragePath := viper.GetString("animeSubsStoragePath")
+	fileStorageFolder := viper.GetString("fileStorageFolder")
+	animeUrlCollection := viper.GetString("animeUrlCollection")
+	animeSubsCollection := viper.GetString("animeSubsCollection")
+
+	animeUrlStoragePath := fileStorageFolder + animeUrlCollection + ".txt"
+	animeSubsStoragePath := fileStorageFolder + animeSubsCollection + ".txt"
 
 	if err := createPath(kitsunekkoCachePath); err != nil {
 		logger.Panicf("Couldn't create path %s, fatal error", kitsunekkoCachePath)
@@ -107,17 +113,22 @@ func Run() {
 	kitsunekkoSubService := kitsunekkov2.NewKitsunekkoScrapperV2(3*time.Minute, logger)
 	subspleaserss := subspleaserss.NewSubsPleaseRss(subspleaserss.Rss1080Url, 3*time.Minute, logger)
 
-	// storage, err := mongodbstorage.NewReleaseStorage(os.Getenv("MONGODB_CONNECTION"), "anime_releases", logger)
-	// if err != nil {
-	// 	logger.Error(err)
-	// 	logger.Info("Using file storage")
-	// 	storage = filereleasestorage.NewFileReleaseStorage(releaseStoragePath)
-	// }
-
-	database := filedatabase.NewFileDatabase(
-		animeUrlStoragePath,
-		animeSubsStoragePath,
+	var database database.Database
+	database, err := mongodatabase.NewMongoDatabase(
+		os.Getenv("MONGODB_CONNECTION"),
+		"anime_releases",
+		animeUrlCollection,
+		animeSubsCollection,
+		logger,
 	)
+
+	if err != nil {
+		logger.Errorf("Couldn't connect to mongo db, switching to file storage, error: %v", err)
+		database = filedatabase.NewFileDatabase(
+			animeUrlStoragePath,
+			animeSubsStoragePath,
+		)
+	}
 
 	animeUrlRepo := animeurlrepository.NewAnimeUrlRepository(database)
 	animeSubsRepo := animesubsrepository.NewAnimeSubsRepository(database)
