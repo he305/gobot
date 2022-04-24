@@ -127,6 +127,7 @@ func Run() {
 		database = filedatabase.NewFileDatabase(
 			animeUrlStoragePath,
 			animeSubsStoragePath,
+			logger,
 		)
 	}
 
