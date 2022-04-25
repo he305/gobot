@@ -316,6 +316,42 @@ func TestGetLatestReleaseValid(t *testing.T) {
 	}
 }
 
+func TestGetLatestReleaseEmptyInputs(t *testing.T) {
+	assert := assert.New(t)
+	sp, _ := newTestPrepareScrapper()
+	sp.feedUrl = sp.feedUrl + "/latest"
+	err := sp.updateFeed()
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	//Hanyou no Yashahime 3</title><link>https://3</link><guid isPermaLink="false">YC7Q3L2TRKWLIIWKZ57VI3ZKE73IHMS5</guid><pubDate>Fri,
+	//07 Apr 2022 08:47:24
+	expected := animeurlservice.AnimeUrlInfo{}
+
+	actualEn := sp.GetLatestUrlForTitle(nil...)
+
+	assert.Equal(expected.Title, actualEn.Title)
+	assert.Equal(expected.Url, actualEn.Url)
+}
+
+func TestGetLatestReleaseEmptyStringInput(t *testing.T) {
+	assert := assert.New(t)
+	sp, _ := newTestPrepareScrapper()
+	sp.feedUrl = sp.feedUrl + "/latest"
+	err := sp.updateFeed()
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	//Hanyou no Yashahime 3</title><link>https://3</link><guid isPermaLink="false">YC7Q3L2TRKWLIIWKZ57VI3ZKE73IHMS5</guid><pubDate>Fri,
+	//07 Apr 2022 08:47:24
+	expected := animeurlservice.AnimeUrlInfo{}
+
+	actualEn := sp.GetLatestUrlForTitle("")
+
+	assert.Equal(expected.Title, actualEn.Title)
+	assert.Equal(expected.Url, actualEn.Url)
+}
+
 func TestGetLatestReleaseNoFiltered(t *testing.T) {
 	sp, _ := newTestPrepareScrapper()
 	sp.feedUrl = sp.feedUrl + "/latest"

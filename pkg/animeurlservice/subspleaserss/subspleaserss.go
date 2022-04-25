@@ -114,6 +114,7 @@ func (s *subspleaserss) filterEntriesByTitles(entries []subsPleaseRssEntry, titl
 			title := stringutils.LowerAndTrimText(title)
 			if isRssMatchingTitle(entry.Text, title) {
 				s.logger.Infof("Found rss that matches title, title: %s, rss: %s", title, entry.Text)
+				s.logger.Debugf("All titles: %v", titles)
 				filtered = append(filtered, entry)
 			}
 		}
@@ -140,6 +141,10 @@ func findLatestPageEntry(entries []subsPleaseRssEntry) subsPleaseRssEntry {
 }
 
 func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms ...string) animeurlservice.AnimeUrlInfo {
+	if len(titlesWithSynonyms) == 0 || titlesWithSynonyms[0] == "" {
+		return animeurlservice.AnimeUrlInfo{}
+	}
+
 	if err := s.updateFeed(); err != nil {
 		s.logger.Errorf("Could parse subs please rss url, url : %s, error: %s", s.feedUrl, err.Error())
 		return animeurlservice.AnimeUrlInfo{}
