@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/mmcdole/gofeed"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -48,12 +49,15 @@ func TestNormalizeRssTitles(t *testing.T) {
 	data := []string{
 		"[SubsPlease] Yami Shibai 10 - 13 (1080p) [A0A563BF].mkv",
 		"[SubsPlease] Magia Record Final Season (09-12) (1080p) [Batch]",
-		"[SubsPlease] Baraou no Souretsu - 12.5 (1080p) [19D386FA].mkv"}
+		"[SubsPlease] Baraou no Souretsu - 12.5 (1080p) [19D386FA].mkv",
+		"[SubsPlease] Gaikotsu Kishi-sama, Tadaima Isekai e Odekakechuu - 03 (1080p) [14C1B0BA].mkv",
+	}
 
 	expected := []string{
 		"yami shibai 10 - 13",
 		"magia record final season (09-12)",
 		"baraou no souretsu - 12.5",
+		"gaikotsu kishi-sama, tadaima isekai e odekakechuu - 03",
 	}
 
 	var actual []string
@@ -209,7 +213,7 @@ func TestGetFilteredEntries(t *testing.T) {
 
 	allEntries := sp.getNormalizedRssEntries()
 
-	actual := filterEntriesByTitles(allEntries, data)
+	actual := sp.filterEntriesByTitles(allEntries, data)
 
 	if len(actual) != 1 {
 		t.Errorf("expected 1 entry, got %v", len(allEntries))
@@ -244,7 +248,7 @@ func TestFindLatest(t *testing.T) {
 
 	allEntries := sp.getNormalizedRssEntries()
 
-	filtered := filterEntriesByTitles(allEntries, data)
+	filtered := sp.filterEntriesByTitles(allEntries, data)
 
 	if len(filtered) != 3 {
 		t.Errorf("expected 3 entry, got %v", len(allEntries))
@@ -273,7 +277,7 @@ func TestFindLatestEmpty(t *testing.T) {
 
 	allEntries := sp.getNormalizedRssEntries()
 
-	filtered := filterEntriesByTitles(allEntries, data)
+	filtered := sp.filterEntriesByTitles(allEntries, data)
 
 	if len(filtered) != 0 {
 		t.Errorf("expected 0 entry, got %v", len(allEntries))
@@ -312,6 +316,27 @@ func TestGetLatestReleaseValid(t *testing.T) {
 	}
 }
 
+func TestGetLatestReleaseNoFiltered(t *testing.T) {
+	sp, _ := newTestPrepareScrapper()
+	sp.feedUrl = sp.feedUrl + "/latest"
+	err := sp.updateFeed()
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	//Hanyou no Yashahime 3</title><link>https://3</link><guid isPermaLink="false">YC7Q3L2TRKWLIIWKZ57VI3ZKE73IHMS5</guid><pubDate>Fri,
+	//07 Apr 2022 08:47:24
+	expected := animeurlservice.AnimeUrlInfo{}
+	data := "some shit"
+
+	actualEn := sp.GetLatestUrlForTitle(data)
+
+	if expected.Title != actualEn.Title ||
+		!expected.TimeUpdated.Equal(actualEn.TimeUpdated) ||
+		expected.Url != actualEn.Url {
+		t.Errorf("expected %v, got %v", expected, actualEn)
+	}
+}
+
 func TestGetLatestReleaseBrokenUrl(t *testing.T) {
 	sp, _ := newTestPrepareScrapper()
 	sp.feedUrl = "/"
@@ -332,4 +357,23 @@ func TestConstructor(t *testing.T) {
 	url := "/test"
 	duration := time.Duration(3 * time.Minute)
 	NewSubsPleaseRss(url, duration, zap.L().Sugar())
+}
+
+func TestIsMathingRss(t *testing.T) {
+	assert := assert.New(t)
+
+	titles := []string{
+		"Re:Zero kara Hajimeru Isekai Seikatsu 2nd Season",
+		"Re: Life in a different world from zero 2nd Season",
+		"ReZero 2nd Season",
+		"Re:Zero - Starting Life in Another World 2",
+		"Re:ZERO -Starting Life in Another World- Season 2",
+		"Re：ゼロから始める異世界生活",
+	}
+
+	rssTitle := "gaikotsu kishi-sama, tadaima isekai e odekakechuu - 03"
+
+	for _, title := range titles {
+		assert.False(isRssMatchingTitle(rssTitle, title))
+	}
 }

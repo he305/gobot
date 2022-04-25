@@ -107,12 +107,13 @@ func (s *subspleaserss) getNormalizedRssEntries() []subsPleaseRssEntry {
 	return allEntries
 }
 
-func filterEntriesByTitles(entries []subsPleaseRssEntry, titles ...string) []subsPleaseRssEntry {
+func (s *subspleaserss) filterEntriesByTitles(entries []subsPleaseRssEntry, titles ...string) []subsPleaseRssEntry {
 	var filtered []subsPleaseRssEntry
 	for _, entry := range entries {
 		for _, title := range titles {
 			title := stringutils.LowerAndTrimText(title)
 			if isRssMatchingTitle(entry.Text, title) {
+				s.logger.Infof("Found rss that matches title, title: %s, rss: %s", title, entry.Text)
 				filtered = append(filtered, entry)
 			}
 		}
@@ -146,7 +147,11 @@ func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms ...string) anime
 
 	normalizedRssTitles := s.getNormalizedRssEntries()
 
-	filteredEntries := filterEntriesByTitles(normalizedRssTitles, titlesWithSynonyms...)
+	filteredEntries := s.filterEntriesByTitles(normalizedRssTitles, titlesWithSynonyms...)
+
+	if len(filteredEntries) == 0 {
+		return animeurlservice.AnimeUrlInfo{}
+	}
 
 	actualentry := findLatestPageEntry(filteredEntries)
 
