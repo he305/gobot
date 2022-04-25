@@ -3,6 +3,7 @@ package kitsunekko
 import (
 	"fmt"
 	"gobot/pkg/animesubs"
+	"gobot/pkg/fileio"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,11 +14,45 @@ import (
 
 type mockfileio struct{}
 
+// ReadFile implements fileio.FileIO
+func (*mockfileio) ReadFile(filePath string) ([]byte, error) {
+	panic("unimplemented")
+}
+
+// AppendToFile implements fileio.FileIO
+func (*mockfileio) AppendToFile(data []byte, filePath string) error {
+	panic("unimplemented")
+}
+
+// SaveToFile implements fileio.FileIO
+func (*mockfileio) SaveToFile(data []byte, filePath string) error {
+	panic("unimplemented")
+}
+
+var _ fileio.FileIO = (*mockfileio)(nil)
+
 func (f *mockfileio) SaveResponseToFile(data *http.Response, filePath string) error {
 	return nil
 }
 
 type mockfileioerror struct{}
+
+// ReadFile implements fileio.FileIO
+func (*mockfileioerror) ReadFile(filePath string) ([]byte, error) {
+	panic("unimplemented")
+}
+
+// AppendToFile implements fileio.FileIO
+func (*mockfileioerror) AppendToFile(data []byte, filePath string) error {
+	panic("unimplemented")
+}
+
+// SaveToFile implements fileio.FileIO
+func (*mockfileioerror) SaveToFile(data []byte, filePath string) error {
+	panic("unimplemented")
+}
+
+var _ fileio.FileIO = (*mockfileioerror)(nil)
 
 func (f *mockfileioerror) SaveResponseToFile(data *http.Response, filePath string) error {
 	return fmt.Errorf("")
