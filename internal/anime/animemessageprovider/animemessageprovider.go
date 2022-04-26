@@ -52,10 +52,10 @@ func (amp *animeMessageProvider) formReleasesMessage() string {
 
 	for _, release := range releases {
 		st := fmt.Sprintf("New release for %v:\n", release.Title)
-		if release.AnimeUrl.Title != "" {
+		if !release.AnimeUrl.IsEmpty() {
 			st += fmt.Sprintf("New series torrent:\nTitle: %v, Url: %v\n", release.AnimeUrl.Title, release.AnimeUrl.Url)
 		}
-		if release.SubsUrl.Title != "" {
+		if !release.SubsUrl.IsEmpty() {
 			st += fmt.Sprintf("New series subs:\nTitle: %v, Url: %v\n", release.SubsUrl.Title, release.SubsUrl.Url)
 		}
 

@@ -101,9 +101,7 @@ func TestFormAnimeDataValid(t *testing.T) {
 	assert.NoError(err)
 
 	for i := range _okDataStructSubs {
-		assert.Equal(_okDataStructSubs[i].Title, actual[i].Title)
-		assert.Equal(_okDataStructSubs[i].Time, actual[i].Time)
-		assert.Equal(_okDataStructSubs[i].Url, actual[i].Url)
+		assert.True(_okDataStructSubs[i].Equal(actual[i]))
 	}
 }
 
@@ -122,9 +120,7 @@ func TestFormAnimeUrlValid(t *testing.T) {
 	assert.NoError(err)
 	assert.Len(actual, len(_okDataStructUrl))
 	for i := range _okDataStructUrl {
-		assert.Equal(_okDataStructUrl[i].Title, actual[i].Title)
-		assert.Equal(_okDataStructUrl[i].TimeUpdated, actual[i].TimeUpdated)
-		assert.Equal(_okDataStructUrl[i].Url, actual[i].Url)
+		assert.True(_okDataStructUrl[i].Equal(actual[i]))
 	}
 }
 
@@ -144,9 +140,7 @@ func TestFormAnimeSubsValid(t *testing.T) {
 	assert.NoError(err)
 	assert.Len(actual, len(data))
 	for i := range data {
-		assert.Equal(data[i].Title, actual[i].Title)
-		assert.Equal(data[i].TimeUpdated, actual[i].TimeUpdated)
-		assert.Equal(data[i].Url, actual[i].Url)
+		assert.True(data[i].Equal(actual[i]))
 	}
 }
 func TestFormAnimeSubsError(t *testing.T) {
@@ -233,9 +227,7 @@ func TestGetAnimeUrlByName(t *testing.T) {
 
 	actual, err := db.GetAnimeUrlByName(data)
 	assert.NoError(err)
-	assert.Equal(expected.Title, actual.Title)
-	assert.Equal(expected.TimeUpdated, actual.TimeUpdated)
-	assert.Equal(expected.Url, actual.Url)
+	assert.True(expected.Equal(actual))
 }
 
 func TestGetAnimeSubsByName(t *testing.T) {
@@ -259,9 +251,7 @@ func TestGetAnimeSubsByName(t *testing.T) {
 
 	actual, err := db.GetAnimeSubByName(data)
 	assert.NoError(err)
-	assert.Equal(expected.Title, actual.Title)
-	assert.Equal(expected.TimeUpdated, actual.TimeUpdated)
-	assert.Equal(expected.Url, actual.Url)
+	assert.True(expected.Equal(actual))
 }
 
 func TestAddAnimeUrls(t *testing.T) {

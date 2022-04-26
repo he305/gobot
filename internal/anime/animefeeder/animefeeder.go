@@ -90,7 +90,7 @@ func (af *animeFeeder) UpdateList() (missingInCachedOutput []animeservice.AnimeS
 }
 
 func (af *animeFeeder) animeUrlExistInRepoOrNull(url animeurlservice.AnimeUrlInfo) bool {
-	if url.Title == "" {
+	if url.IsEmpty() {
 		return true
 	}
 
@@ -99,7 +99,7 @@ func (af *animeFeeder) animeUrlExistInRepoOrNull(url animeurlservice.AnimeUrlInf
 		af.logger.Errorf("Couldn't get info from anime repository, error: %v", err)
 		return true
 	}
-	if foundedAnimeUrl.Url != "" {
+	if foundedAnimeUrl.IsEmpty() {
 		return true
 	}
 
@@ -107,7 +107,7 @@ func (af *animeFeeder) animeUrlExistInRepoOrNull(url animeurlservice.AnimeUrlInf
 }
 
 func (af *animeFeeder) animeSubsExistInRepoOrNull(subs animesubs.SubsInfo) bool {
-	if subs.Title == "" {
+	if subs.IsEmpty() {
 		return true
 	}
 
@@ -116,7 +116,7 @@ func (af *animeFeeder) animeSubsExistInRepoOrNull(subs animesubs.SubsInfo) bool 
 		af.logger.Errorf("Couldn't get info from subs repository, error: %v", err)
 		return true
 	}
-	if foundedAnimeUrl.Url != "" {
+	if foundedAnimeUrl.IsEmpty() {
 		return true
 	}
 
