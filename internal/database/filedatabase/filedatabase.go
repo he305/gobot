@@ -24,7 +24,7 @@ type fileDatabase struct {
 var _ database.Database = (*fileDatabase)(nil)
 var defaultSeparator = "|"
 
-func NewFileDatabase(animeUrlPathFile string, animesubsPathFile string, logger *zap.SugaredLogger) database.Database {
+func NewFileDatabase(animeUrlPathFile string, animesubsPathFile string, logger *zap.SugaredLogger) *fileDatabase {
 	storage := &fileDatabase{animeUrlPathFile: animeUrlPathFile, animeSubsPathFile: animesubsPathFile, logger: logger, fileIo: fileio.NewDefaultFileIO()}
 	return storage
 }

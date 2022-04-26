@@ -45,7 +45,7 @@ func NewAnimeFeeder(animeService animeservice.AnimeService,
 	animeurlfinder animeurlservice.AnimeUrlService,
 	animeUrlRepository animeurlrepository.AnimeUrlRepository,
 	animeSubsRepository animesubsrepository.AnimeSubsRepository,
-	logger *zap.SugaredLogger) AnimeFeeder {
+	logger *zap.SugaredLogger) *animeFeeder {
 	af := &animeFeeder{animeService: animeService,
 		cachedList:          anime.NewAnimeList(),
 		subServive:          animesubs,

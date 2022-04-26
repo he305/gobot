@@ -27,7 +27,7 @@ type webpagekeeper struct {
 
 var _ WebPageKeeper = (*webpagekeeper)(nil)
 
-func NewWebPageKeeper(timeToUpdate time.Duration, logger *zap.SugaredLogger) WebPageKeeper {
+func NewWebPageKeeper(timeToUpdate time.Duration, logger *zap.SugaredLogger) *webpagekeeper {
 	return &webpagekeeper{timeToUpdate: timeToUpdate, logger: logger}
 }
 

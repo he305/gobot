@@ -44,7 +44,7 @@ func parseKitsunekkoTime(timeString string) (time.Time, error) {
 	return parsedTime, nil
 }
 
-func NewKitsunekkoScrapperV2(timeUpdate time.Duration, logger *zap.SugaredLogger) animesubs.AnimeSubsService {
+func NewKitsunekkoScrapperV2(timeUpdate time.Duration, logger *zap.SugaredLogger) *kitsunekkoScrapperV2 {
 	return &kitsunekkoScrapperV2{
 		logger:     logger,
 		timeUpdate: timeUpdate,

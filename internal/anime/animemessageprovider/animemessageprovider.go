@@ -15,7 +15,7 @@ type animeMessageProvider struct {
 
 var _ AnimeMessageProvider = (*animeMessageProvider)(nil)
 
-func NewAnimeMessageProvider(feeder animefeeder.AnimeFeeder) AnimeMessageProvider {
+func NewAnimeMessageProvider(feeder animefeeder.AnimeFeeder) *animeMessageProvider {
 	return &animeMessageProvider{
 		feeder: feeder,
 	}

@@ -34,7 +34,7 @@ func (*fileIo) ReadFile(filePath string) ([]byte, error) {
 
 var _ FileIO = (*fileIo)(nil)
 
-func NewDefaultFileIO() FileIO {
+func NewDefaultFileIO() *fileIo {
 	return &fileIo{}
 }
 

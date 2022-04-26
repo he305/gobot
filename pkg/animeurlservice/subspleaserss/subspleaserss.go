@@ -35,7 +35,7 @@ type subspleaserss struct {
 
 var _ animeurlservice.AnimeUrlService = (*subspleaserss)(nil)
 
-func NewSubsPleaseRss(feedUrl string, updateTimer time.Duration, logger *zap.SugaredLogger) animeurlservice.AnimeUrlService {
+func NewSubsPleaseRss(feedUrl string, updateTimer time.Duration, logger *zap.SugaredLogger) *subspleaserss {
 	return &subspleaserss{
 		parser:      gofeed.NewParser(),
 		logger:      logger,

@@ -22,7 +22,7 @@ type mongoDatabase struct {
 	logger              *zap.SugaredLogger
 }
 
-func NewMongoDatabase(connectionString string, database string, animeUrlCollection string, animeSubsCollection string, logger *zap.SugaredLogger) (database.Database, error) {
+func NewMongoDatabase(connectionString string, database string, animeUrlCollection string, animeSubsCollection string, logger *zap.SugaredLogger) (*mongoDatabase, error) {
 	mongoClient, err := connectToDatabase(connectionString)
 	if err != nil {
 		return nil, err

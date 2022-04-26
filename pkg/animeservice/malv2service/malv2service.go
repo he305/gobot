@@ -156,7 +156,7 @@ func (serv *malv2service) GetUserAnimeList() ([]as.AnimeStruct, error) {
 	return animeList, nil
 }
 
-func NewMalv2Service(username string, password string) as.AnimeService {
+func NewMalv2Service(username string, password string) *malv2service {
 	return &malv2service{username: username, password: password, tokenInfo: TokenAuthResponse{}, client: resty.New(), logger: logging.GetLogger()}
 }
 

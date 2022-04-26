@@ -52,7 +52,7 @@ func getNewKitsunekkoCollyCollector() *colly.Collector {
 	return collector
 }
 
-func NewKitsunekkoScrapper(fileIo fileio.FileIO, cachedFilePath string, updateTimer time.Duration) animesubs.AnimeSubsService {
+func NewKitsunekkoScrapper(fileIo fileio.FileIO, cachedFilePath string, updateTimer time.Duration) *kitsunekkoScrapper {
 	return &kitsunekkoScrapper{logger: logging.GetLogger(),
 		updateTimer:     updateTimer,
 		cachedFilePath:  cachedFilePath,
