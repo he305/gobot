@@ -112,7 +112,7 @@ func (s *subspleaserss) filterEntriesByTitles(entries []subsPleaseRssEntry, titl
 	for _, entry := range entries {
 		for _, title := range titles {
 			title := stringutils.LowerAndTrimText(title)
-			if isRssMatchingTitle(entry.Text, title) {
+			if s.isRssMatchingTitle(entry.Text, title) {
 				s.logger.Infof("Found rss that matches title, title: %s, rss: %s", title, entry.Text)
 				s.logger.Debugf("All titles: %v", titles)
 				filtered = append(filtered, entry)
@@ -168,9 +168,18 @@ func (s *subspleaserss) GetLatestUrlForTitle(titlesWithSynonyms ...string) anime
 
 }
 
-func isRssMatchingTitle(rss string, title string) bool {
+func (s *subspleaserss) isRssMatchingTitle(rss string, title string) bool {
 	// Normalize title
 	title = stringutils.LowerAndTrimText(title)
+
+	// Before anything else, it's a good idea to see
+	// if both strings are from the same unicode category.
+	// If not, it's better to return false.
+	// Atleast only for japanese
+	if stringutils.IsStringContainsJapanese(rss) != stringutils.IsStringContainsJapanese(title) {
+		return false
+	}
+
 	// First - simple matching
 	isMatching := stringutils.AreSecondContainsFirst(title, rss)
 	if isMatching {
@@ -179,7 +188,12 @@ func isRssMatchingTitle(rss string, title string) bool {
 
 	// Second - levenshtein
 	percent := stringutils.GetLevenshteinDistancePercent(rss, title)
-	return percent >= levenshteinPercentMin
+	if percent >= levenshteinPercentMin {
+		s.logger.Debugf("Levenstein distance percent for %v and %v = %v", rss, title, percent)
+		return true
+	}
+
+	return false
 }
 
 func normalizeRssTitle(title string) string {

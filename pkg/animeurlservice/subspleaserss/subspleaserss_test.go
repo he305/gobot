@@ -87,11 +87,14 @@ func TestSubsPleaseTimeParse(t *testing.T) {
 }
 
 func TestIsRssMathingTitlesTrueSimpleMatching(t *testing.T) {
+	sp, _ := newTestPrepareScrapper()
+	sp.feedUrl = "/"
+
 	dataRss := "Shingeki no kyoujin"
 	dataTitle := "sHiNgEkI"
 
 	expected := true
-	actual := isRssMatchingTitle(dataRss, dataTitle)
+	actual := sp.isRssMatchingTitle(dataRss, dataTitle)
 
 	if expected != actual {
 		t.Errorf("expected %v, got %v", expected, actual)
@@ -99,11 +102,14 @@ func TestIsRssMathingTitlesTrueSimpleMatching(t *testing.T) {
 }
 
 func TestIsRssMathingTitlesTrueLevenshtein(t *testing.T) {
+	sp, _ := newTestPrepareScrapper()
+	sp.feedUrl = "/"
+
 	dataRss := "shingeki+no+kyoujin"
 	dataTitle := "shingeki no kyoujin"
 
 	expected := true
-	actual := isRssMatchingTitle(dataRss, dataTitle)
+	actual := sp.isRssMatchingTitle(dataRss, dataTitle)
 
 	if expected != actual {
 		t.Errorf("expected %v, got %v", expected, actual)
@@ -389,19 +395,54 @@ func TestConstructor(t *testing.T) {
 
 func TestIsMathingRss(t *testing.T) {
 	assert := assert.New(t)
-
-	titles := []string{
-		"Re:Zero kara Hajimeru Isekai Seikatsu 2nd Season",
-		"Re: Life in a different world from zero 2nd Season",
-		"ReZero 2nd Season",
-		"Re:Zero - Starting Life in Another World 2",
-		"Re:ZERO -Starting Life in Another World- Season 2",
-		"Re：ゼロから始める異世界生活",
+	sp, _ := newTestPrepareScrapper()
+	sp.feedUrl = "/"
+	type testStruct struct {
+		name     string
+		titles   []string
+		rss      string
+		expected bool
 	}
 
-	rssTitle := "gaikotsu kishi-sama, tadaima isekai e odekakechuu - 03"
-
-	for _, title := range titles {
-		assert.False(isRssMatchingTitle(rssTitle, title))
+	testCases := []testStruct{
+		{
+			name: "re zero",
+			titles: []string{
+				"Re:Zero kara Hajimeru Isekai Seikatsu 2nd Season",
+				"Re: Life in a different world from zero 2nd Season",
+				"ReZero 2nd Season",
+				"Re:Zero - Starting Life in Another World 2",
+				"Re:ZERO -Starting Life in Another World- Season 2",
+				"Re：ゼロから始める異世界生活",
+			},
+			rss:      "gaikotsu kishi-sama, tadaima isekai e odekakechuu - 03",
+			expected: false,
+		},
+		{
+			name: "bug with kanji?",
+			titles: []string{
+				"クロスアンジュ 天使と竜の輪舞〈ロンド〉",
+			},
+			rss:      "deaimon - 04",
+			expected: false,
+		},
+		{
+			name: "maybe japanese?",
+			titles: []string{
+				"理由的",
+			},
+			rss:      "理由",
+			expected: true,
+		},
 	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			for _, title := range testCase.titles {
+				actual := sp.isRssMatchingTitle(testCase.rss, title)
+				assert.Equal(testCase.expected, actual)
+			}
+		})
+	}
+
 }
