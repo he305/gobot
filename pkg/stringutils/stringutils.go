@@ -31,3 +31,20 @@ func LowerAndTrimText(text string) string {
 	text = strings.TrimSpace(text)
 	return text
 }
+
+func IsStringContainsJapanese(text string) bool {
+	byteText := []byte(text)
+	var regexHiragana = regexp.MustCompile(`[^\P{Hiragana}\p{N}]`)
+
+	if regexHiragana.Match(byteText) {
+		return true
+	}
+
+	var regexKanji = regexp.MustCompile(`[^\P{Han}\p{N}]`)
+	if regexKanji.Match(byteText) {
+		return true
+	}
+
+	var regexKatakana = regexp.MustCompile(`[^\P{Katakana}\p{N}]`)
+	return regexKatakana.Match(byteText)
+}

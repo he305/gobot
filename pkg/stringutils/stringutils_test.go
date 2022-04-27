@@ -2,6 +2,8 @@ package stringutils
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetLevenshteinDistanceCorrect(t *testing.T) {
@@ -52,4 +54,58 @@ func TestAreSecondContainsFirstFalse(t *testing.T) {
 	if expected != actual {
 		t.Errorf("expected %v, got %v", expected, actual)
 	}
+}
+
+func TestIsStringContainsJapanese(t *testing.T) {
+	assert := assert.New(t)
+	type testStruct struct {
+		name     string
+		text     string
+		expected bool
+	}
+	testCases := []testStruct{
+		{
+			name:     "Latin",
+			text:     "some text",
+			expected: false,
+		},
+		{
+			name:     "Cyrillic",
+			text:     "текст",
+			expected: false,
+		},
+		{
+			name:     "Only hiragana",
+			text:     "おまえはもうしんでいる",
+			expected: true,
+		},
+		{
+			name:     "Only katakana",
+			text:     "オマエハモウシンデイル",
+			expected: true,
+		},
+		{
+			name:     "Only kanji",
+			text:     "具体的",
+			expected: true,
+		},
+		{
+			name:     "Mixed japanese",
+			text:     "オマエはもう死んでいる",
+			expected: true,
+		},
+		{
+			name:     "Mixed with Latin",
+			text:     "大切なもの protect my balls",
+			expected: true,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := IsStringContainsJapanese(testCase.text)
+			assert.Equal(testCase.expected, actual)
+		})
+	}
+
 }
