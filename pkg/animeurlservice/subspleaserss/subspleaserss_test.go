@@ -434,6 +434,14 @@ func TestIsMathingRss(t *testing.T) {
 			rss:      "理由",
 			expected: true,
 		},
+		{
+			name: "another broken match",
+			titles: []string{
+				"zombieland saga: revenge",
+			},
+			rss:      "dance dance danseur - 03",
+			expected: false,
+		},
 	}
 
 	for _, testCase := range testCases {

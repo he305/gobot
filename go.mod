@@ -10,7 +10,6 @@ require (
 	github.com/gocolly/colly v1.2.0
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
-	github.com/ka-weihe/fast-levenshtein v0.0.0-20201227151214-4c99ee36a1ba
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/mmcdole/gofeed v1.1.3
 	github.com/spf13/viper v1.10.1

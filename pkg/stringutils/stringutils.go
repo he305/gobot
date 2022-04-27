@@ -4,12 +4,10 @@ import (
 	"math"
 	"regexp"
 	"strings"
-
-	levenshtein "github.com/ka-weihe/fast-levenshtein"
 )
 
 func GetLevenshteinDistance(first string, second string) int {
-	return levenshtein.Distance(first, second)
+	return levenshtein([]rune(first), []rune(second))
 }
 
 func GetLevenshteinDistancePercent(first string, second string) int {
