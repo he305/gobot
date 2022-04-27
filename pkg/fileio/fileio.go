@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 )
 
 type FileIO interface {
@@ -12,9 +13,19 @@ type FileIO interface {
 	SaveToFile(data []byte, filePath string) error
 	AppendToFile(data []byte, filePath string) error
 	ReadFile(filePath string) ([]byte, error)
+	CreateDirectory(dirpath string) error
 }
 
 type fileIo struct{}
+
+func (*fileIo) CreateDirectory(dirpath string) error {
+	_, err := os.Stat(dirpath)
+	if !os.IsNotExist(err) {
+		return nil
+	}
+
+	return os.MkdirAll(filepath.Dir(dirpath), 0770)
+}
 
 // ReadFile implements FileIO
 func (*fileIo) ReadFile(filePath string) ([]byte, error) {

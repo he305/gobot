@@ -14,6 +14,11 @@ import (
 
 type mockfileio struct{}
 
+// CreateDirectory implements fileio.FileIO
+func (*mockfileio) CreateDirectory(dirpath string) error {
+	panic("unimplemented")
+}
+
 // ReadFile implements fileio.FileIO
 func (*mockfileio) ReadFile(filePath string) ([]byte, error) {
 	panic("unimplemented")
@@ -36,6 +41,11 @@ func (f *mockfileio) SaveResponseToFile(data *http.Response, filePath string) er
 }
 
 type mockfileioerror struct{}
+
+// CreateDirectory implements fileio.FileIO
+func (*mockfileioerror) CreateDirectory(dirpath string) error {
+	panic("unimplemented")
+}
 
 // ReadFile implements fileio.FileIO
 func (*mockfileioerror) ReadFile(filePath string) ([]byte, error) {
