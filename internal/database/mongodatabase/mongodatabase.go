@@ -3,8 +3,6 @@ package mongodatabase
 import (
 	"context"
 	"gobot/internal/database"
-	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlservice"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,6 +18,65 @@ type mongoDatabase struct {
 	animeUrlCollection  string
 	animeSubsCollection string
 	logger              *zap.SugaredLogger
+}
+
+func makeEntryInterface(entry map[string]interface{}) bson.D {
+	var bsonD bson.D
+	for k, v := range entry {
+		bsonD = append(bsonD, bson.E{
+			Key: k, Value: v,
+		})
+	}
+	return bsonD
+}
+
+// AddEntries implements database.Database
+func (md *mongoDatabase) AddEntries(collectionName string, entries []map[string]interface{}) error {
+	if len(entries) == 0 {
+		return nil
+	}
+
+	collection := md.client.Database(md.database).Collection(collectionName)
+	newEntriesInterface := make([]interface{}, 0, len(entries))
+	for _, entry := range entries {
+		newEntriesInterface = append(newEntriesInterface, makeEntryInterface(entry))
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := collection.InsertMany(ctx, newEntriesInterface)
+	if err != nil {
+		return err
+	}
+
+	md.logger.Infof("%d new entries added", len(newEntriesInterface))
+
+	return nil
+}
+
+// AddEntry implements database.Database
+func (md *mongoDatabase) AddEntry(collectionName string, entry map[string]interface{}) error {
+	return md.AddEntries(collectionName, []map[string]interface{}{entry})
+}
+
+// GetEntryByName implements database.Database
+func (md *mongoDatabase) GetEntryByName(collectionName string, key string, name string) (map[string]interface{}, error) {
+	filterCursor, err := md.client.Database(md.database).Collection(collectionName).Find(context.TODO(), bson.M{key: name})
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []map[string]interface{}
+	if err = filterCursor.All(context.TODO(), &entries); err != nil {
+		return nil, err
+	}
+
+	if len(entries) == 0 {
+		return nil, nil
+	}
+
+	return entries[0], nil
 }
 
 func NewMongoDatabase(connectionString string, database string, animeUrlCollection string, animeSubsCollection string, logger *zap.SugaredLogger) (*mongoDatabase, error) {
@@ -52,104 +109,6 @@ func connectToDatabase(connectionString string) (*mongo.Client, error) {
 		return nil, err
 	}
 	return client, nil
-}
-
-func (md *mongoDatabase) getAnimeEntryByName(collection string, name string) (AnimeEntry, error) {
-	filterCursor, err := md.client.Database(md.database).Collection(collection).Find(context.TODO(), bson.M{"title": name})
-	if err != nil {
-		return AnimeEntry{}, err
-	}
-
-	var entries []AnimeEntry
-	if err = filterCursor.All(context.TODO(), &entries); err != nil {
-		return AnimeEntry{}, err
-	}
-
-	if len(entries) == 0 {
-		return AnimeEntry{}, nil
-	}
-
-	return entries[0], nil
-}
-
-func (md *mongoDatabase) addAnimeEntries(collectionString string, entries []AnimeEntry) error {
-	if len(entries) == 0 {
-		return nil
-	}
-
-	collection := md.client.Database(md.database).Collection(collectionString)
-	var newEntriesInterface []interface{}
-	for _, entry := range entries {
-		newEntriesInterface = append(newEntriesInterface, bson.D{
-			{Key: "title", Value: entry.Title},
-			{Key: "url", Value: entry.Url},
-			{Key: "time", Value: entry.Time},
-		})
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err := collection.InsertMany(ctx, newEntriesInterface)
-	if err != nil {
-		return err
-	}
-
-	md.logger.Infof("%d new entries added", len(newEntriesInterface))
-
-	return nil
-}
-
-func (md *mongoDatabase) AddAnimeUrls(entries ...animeurlservice.AnimeUrlInfo) error {
-	var mongoEntries []AnimeEntry
-	for _, entry := range entries {
-		mongoEntries = append(mongoEntries, AnimeEntry{
-			Title: entry.Title,
-			Url:   entry.Url,
-			Time:  entry.TimeUpdated.Unix(),
-		})
-	}
-
-	return md.addAnimeEntries(md.animeUrlCollection, mongoEntries)
-}
-
-func (md *mongoDatabase) AddSubs(entries ...animesubs.SubsInfo) error {
-	var mongoEntries []AnimeEntry
-	for _, entry := range entries {
-		mongoEntries = append(mongoEntries, AnimeEntry{
-			Title: entry.Title,
-			Url:   entry.Url,
-			Time:  entry.TimeUpdated.Unix(),
-		})
-	}
-
-	return md.addAnimeEntries(md.animeSubsCollection, mongoEntries)
-}
-
-func (md *mongoDatabase) GetAnimeSubByName(name string) (animesubs.SubsInfo, error) {
-	entry, err := md.getAnimeEntryByName(md.animeSubsCollection, name)
-	if err != nil {
-		return animesubs.SubsInfo{}, err
-	}
-
-	return animesubs.SubsInfo{
-		Title:       entry.Title,
-		Url:         entry.Url,
-		TimeUpdated: time.Unix(entry.Time, 0),
-	}, nil
-}
-
-func (md *mongoDatabase) GetAnimeUrlByName(name string) (animeurlservice.AnimeUrlInfo, error) {
-	entry, err := md.getAnimeEntryByName(md.animeUrlCollection, name)
-	if err != nil {
-		return animeurlservice.AnimeUrlInfo{}, err
-	}
-
-	return animeurlservice.AnimeUrlInfo{
-		Title:       entry.Title,
-		Url:         entry.Url,
-		TimeUpdated: time.Unix(entry.Time, 0),
-	}, nil
 }
 
 var _ database.Database = (*mongoDatabase)(nil)

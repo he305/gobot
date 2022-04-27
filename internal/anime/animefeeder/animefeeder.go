@@ -2,8 +2,8 @@ package animefeeder
 
 import (
 	"gobot/internal/anime"
-	"gobot/internal/anime/animesubsrepository"
-	"gobot/internal/anime/animeurlrepository"
+	"gobot/internal/database/animesubsrepository"
+	"gobot/internal/database/animeurlrepository"
 	"gobot/pkg/animeservice"
 	"gobot/pkg/animesubs"
 	"gobot/pkg/animeurlservice"
@@ -99,7 +99,7 @@ func (af *animeFeeder) animeUrlExistInRepoOrNull(url animeurlservice.AnimeUrlInf
 		af.logger.Errorf("Couldn't get info from anime repository, error: %v", err)
 		return true
 	}
-	if foundedAnimeUrl.IsEmpty() {
+	if !foundedAnimeUrl.IsEmpty() {
 		return true
 	}
 
@@ -116,7 +116,7 @@ func (af *animeFeeder) animeSubsExistInRepoOrNull(subs animesubs.SubsInfo) bool 
 		af.logger.Errorf("Couldn't get info from subs repository, error: %v", err)
 		return true
 	}
-	if foundedAnimeUrl.IsEmpty() {
+	if !foundedAnimeUrl.IsEmpty() {
 		return true
 	}
 
@@ -145,7 +145,6 @@ func (af *animeFeeder) FindLatestReleases() []LatestReleases {
 		animeSub := <-animeSubChan
 
 		isTrashAnimeUrl := af.animeUrlExistInRepoOrNull(animeUrl)
-
 		if !isTrashAnimeUrl {
 			newAnimeUrls = append(newAnimeUrls, animeUrl)
 		} else {

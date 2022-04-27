@@ -3,9 +3,9 @@ package gobot
 import (
 	"gobot/internal/anime/animefeeder"
 	"gobot/internal/anime/animemessageprovider"
-	"gobot/internal/anime/animesubsrepository"
-	"gobot/internal/anime/animeurlrepository"
 	"gobot/internal/database"
+	"gobot/internal/database/animesubsrepository"
+	"gobot/internal/database/animeurlrepository"
 	"gobot/internal/database/filedatabase"
 	"gobot/internal/database/mongodatabase"
 	"gobot/pkg/animeservice/malv2service"
@@ -91,8 +91,8 @@ func Run() {
 	animeUrlCollection := viper.GetString("animeUrlCollection")
 	animeSubsCollection := viper.GetString("animeSubsCollection")
 
-	animeUrlStoragePath := fileStorageFolder + animeUrlCollection + ".txt"
-	animeSubsStoragePath := fileStorageFolder + animeSubsCollection + ".txt"
+	// animeUrlStoragePath := fileStorageFolder + animeUrlCollection + "/"
+	// animeSubsStoragePath := fileStorageFolder + animeSubsCollection + "/"
 
 	if err := createPath(kitsunekkoCachePath); err != nil {
 		logger.Panicf("Couldn't create path %s, fatal error", kitsunekkoCachePath)
@@ -100,12 +100,12 @@ func Run() {
 	if err := createPath(releaseStoragePath); err != nil {
 		logger.Panicf("Couldn't create path %s, fatal error", releaseStoragePath)
 	}
-	if err := createPath(animeUrlStoragePath); err != nil {
-		logger.Panicf("Couldn't create path %s, fatal error", animeUrlStoragePath)
-	}
-	if err := createPath(animeSubsStoragePath); err != nil {
-		logger.Panicf("Couldn't create path %s, fatal error", animeSubsStoragePath)
-	}
+	// if err := createPath(animeUrlStoragePath); err != nil {
+	// 	logger.Panicf("Couldn't create path %s, fatal error", animeUrlStoragePath)
+	// }
+	// if err := createPath(animeSubsStoragePath); err != nil {
+	// 	logger.Panicf("Couldn't create path %s, fatal error", animeSubsStoragePath)
+	// }
 
 	malserv := malv2service.NewMalv2Service(malv2username, malv2password)
 	//fileIo := fileio.NewDefaultFileIO()
@@ -125,14 +125,13 @@ func Run() {
 	if err != nil {
 		logger.Errorf("Couldn't connect to mongo db, switching to file storage, error: %v", err)
 		database = filedatabase.NewFileDatabase(
-			animeUrlStoragePath,
-			animeSubsStoragePath,
+			fileStorageFolder,
 			logger,
 		)
 	}
 
-	animeUrlRepo := animeurlrepository.NewAnimeUrlRepository(database)
-	animeSubsRepo := animesubsrepository.NewAnimeSubsRepository(database)
+	animeUrlRepo := animeurlrepository.NewAnimeUrlRepository(database, animeUrlCollection)
+	animeSubsRepo := animesubsrepository.NewAnimeSubsRepository(database, animeSubsCollection)
 
 	animeFeeder := animefeeder.NewAnimeFeeder(malserv, kitsunekkoSubService, subspleaserss, animeUrlRepo, animeSubsRepo, logger)
 

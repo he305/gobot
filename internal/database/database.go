@@ -1,13 +1,7 @@
 package database
 
-import (
-	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlservice"
-)
-
 type Database interface {
-	GetAnimeUrlByName(name string) (animeurlservice.AnimeUrlInfo, error)
-	AddAnimeUrls(...animeurlservice.AnimeUrlInfo) error
-	GetAnimeSubByName(name string) (animesubs.SubsInfo, error)
-	AddSubs(...animesubs.SubsInfo) error
+	GetEntryByName(collectionName string, key string, name string) (map[string]interface{}, error)
+	AddEntry(collectionName string, entry map[string]interface{}) error
+	AddEntries(collectionName string, entries []map[string]interface{}) error
 }

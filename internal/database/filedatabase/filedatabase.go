@@ -1,31 +1,28 @@
 package filedatabase
 
 import (
+	"encoding/json"
 	"fmt"
 	"gobot/internal/database"
-	"gobot/pkg/animesubs"
-	"gobot/pkg/animeurlservice"
 	"gobot/pkg/fileio"
-	"strconv"
 	"strings"
-	"time"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
 type fileDatabase struct {
-	animeUrlPathFile  string
-	animeSubsPathFile string
-	storagePath       string
-	fileIo            fileio.FileIO
-	logger            *zap.SugaredLogger
+	storageFolder string
+	fileIo        fileio.FileIO
+	logger        *zap.SugaredLogger
 }
 
 var _ database.Database = (*fileDatabase)(nil)
-var defaultSeparator = "|"
 
-func NewFileDatabase(animeUrlPathFile string, animesubsPathFile string, logger *zap.SugaredLogger) *fileDatabase {
-	storage := &fileDatabase{animeUrlPathFile: animeUrlPathFile, animeSubsPathFile: animesubsPathFile, logger: logger, fileIo: fileio.NewDefaultFileIO()}
+const DefaultExtension = "txt"
+
+func NewFileDatabase(storageFolder string, logger *zap.SugaredLogger) *fileDatabase {
+	storage := &fileDatabase{storageFolder: storageFolder, logger: logger, fileIo: fileio.NewDefaultFileIO()}
 	return storage
 }
 
@@ -34,171 +31,90 @@ func (db *fileDatabase) readFile(filepath string) (string, error) {
 	return string(content), err
 }
 
-func formAnimeData(data string) ([]FileAnimeData, error) {
-	dataSplit := strings.Split(data, "\n")
-	var fileAnimeDatas []FileAnimeData
-	for _, line := range dataSplit {
-		splitted := strings.Split(line, defaultSeparator)
-		if len(splitted) < 3 {
-			continue
+func (db *fileDatabase) getFilesInDir(dirname string) ([]string, error) {
+	return db.fileIo.GetFilesInDir(dirname)
+}
+
+func (db *fileDatabase) findFileNameInFolder(dirname string, name string) (string, error) {
+	files, err := db.getFilesInDir(dirname)
+	if err != nil {
+		return "", err
+	}
+
+	for _, file := range files {
+		fileName := strings.ReplaceAll(file, "."+DefaultExtension, "")
+		if fileName == name {
+			return file, nil
 		}
-		rawTimeAnimeUrl, err := strconv.ParseInt(splitted[1], 10, 64)
+	}
+
+	return "", nil
+}
+
+func (db *fileDatabase) GetEntryByName(collectionName string, key string, name string) (map[string]interface{}, error) {
+	searchFolder := db.storageFolder + collectionName + "/"
+	err := db.fileIo.CreateDirectory(searchFolder)
+	if err != nil {
+		return nil, err
+	}
+
+	filePath, err := db.findFileNameInFolder(searchFolder, name)
+	if err != nil {
+		return nil, err
+	}
+
+	if filePath == "" {
+		return nil, nil
+	}
+
+	contents, err := db.fileIo.ReadFile(searchFolder + filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+
+	err = json.Unmarshal(contents, &result)
+	return result, err
+}
+
+// AddEntry implements database.Database
+func (db *fileDatabase) AddEntry(collectionName string, entry map[string]interface{}) error {
+	if len(entry) == 0 {
+		return nil
+	}
+
+	var fileName string
+
+	if val, ok := entry["Title"]; ok {
+		fileName = fmt.Sprintf("%v", val)
+	} else {
+		fileName = uuid.NewString()
+	}
+
+	folder := db.storageFolder + collectionName + "/"
+	err := db.fileIo.CreateDirectory(folder)
+	if err != nil {
+		return err
+	}
+
+	fullPath := folder + fileName + "." + DefaultExtension
+
+	jsonData, err := json.Marshal(entry)
+	if err != nil {
+		return err
+	}
+	return db.fileIo.SaveToFile([]byte(jsonData), fullPath)
+}
+
+// AddEntries implements database.Database
+func (db *fileDatabase) AddEntries(collectionName string, entries []map[string]interface{}) error {
+	for _, entry := range entries {
+		err := db.AddEntry(collectionName, entry)
 		if err != nil {
-			return nil, fmt.Errorf("Fatal error parsing %s line to unix time, error: %s", splitted[1], err.Error())
-		}
-
-		fileAnimeDatas = append(fileAnimeDatas, FileAnimeData{
-			Title: splitted[0],
-			Time:  rawTimeAnimeUrl,
-			Url:   splitted[2],
-		})
-	}
-
-	return fileAnimeDatas, nil
-}
-
-func formAnimeUrlInfos(data string) ([]animeurlservice.AnimeUrlInfo, error) {
-	parsedData, err := formAnimeData(data)
-	if err != nil {
-		return nil, err
-	}
-
-	var savedAnimeUrls []animeurlservice.AnimeUrlInfo
-	for _, entry := range parsedData {
-		savedAnimeUrls = append(savedAnimeUrls, animeurlservice.AnimeUrlInfo{
-			Title:       entry.Title,
-			Url:         entry.Url,
-			TimeUpdated: time.Unix(entry.Time, 0),
-		})
-	}
-
-	return savedAnimeUrls, nil
-}
-
-func formAnimeSubs(data string) ([]animesubs.SubsInfo, error) {
-	parsedData, err := formAnimeData(data)
-	if err != nil {
-		return nil, err
-	}
-
-	var savedSubs []animesubs.SubsInfo
-	for _, entry := range parsedData {
-		savedSubs = append(savedSubs, animesubs.SubsInfo{
-			Title:       entry.Title,
-			Url:         entry.Url,
-			TimeUpdated: time.Unix(entry.Time, 0),
-		})
-	}
-
-	return savedSubs, nil
-}
-
-func (db *fileDatabase) GetAnimeUrlByName(name string) (animeurlservice.AnimeUrlInfo, error) {
-	data, err := db.readFile(db.animeUrlPathFile)
-	if err != nil {
-		return animeurlservice.AnimeUrlInfo{}, err
-	}
-
-	if data == "" {
-		return animeurlservice.AnimeUrlInfo{}, nil
-	}
-
-	animeUrls, err := formAnimeUrlInfos(data)
-	if err != nil {
-		return animeurlservice.AnimeUrlInfo{}, err
-	}
-
-	for _, an := range animeUrls {
-		if an.Title == name {
-			return an, nil
+			return err
 		}
 	}
-
-	return animeurlservice.AnimeUrlInfo{}, nil
-}
-
-func (db *fileDatabase) GetAnimeSubByName(name string) (animesubs.SubsInfo, error) {
-	data, err := db.readFile(db.animeSubsPathFile)
-	if err != nil {
-		return animesubs.SubsInfo{}, err
-	}
-
-	animeSubs, err := formAnimeSubs(data)
-	if err != nil {
-		return animesubs.SubsInfo{}, err
-	}
-
-	for _, an := range animeSubs {
-		if an.Title == name {
-			return an, nil
-		}
-	}
-	return animesubs.SubsInfo{}, nil
-}
-
-func formFileAnimeDataFromAnimeUrl(entry animeurlservice.AnimeUrlInfo) FileAnimeData {
-	return FileAnimeData{
-		Title: entry.Title,
-		Url:   entry.Url,
-		Time:  entry.TimeUpdated.Unix(),
-	}
-}
-
-func formFileAnimeDataFromAnimeSubs(entry animesubs.SubsInfo) FileAnimeData {
-	return FileAnimeData{
-		Title: entry.Title,
-		Url:   entry.Url,
-		Time:  entry.TimeUpdated.Unix(),
-	}
-}
-
-func formStringDataToWrite(entry FileAnimeData) string {
-	st := entry.Title + defaultSeparator +
-		fmt.Sprintf("%d", entry.Time) + defaultSeparator +
-		entry.Url
-	return st
-}
-
-func (db *fileDatabase) writeToFile(data string, path string) error {
-	return db.fileIo.AppendToFile([]byte(data), path)
-}
-
-func (db *fileDatabase) AddSubs(subs ...animesubs.SubsInfo) error {
-	if len(subs) == 0 {
-		return nil
-	}
-
-	var data string
-	for _, entry := range subs {
-		animeData := formFileAnimeDataFromAnimeSubs(entry)
-		data += formStringDataToWrite(animeData) + "\n"
-	}
-	err := db.writeToFile(data, db.animeSubsPathFile)
-	if err != nil {
-		return err
-	}
-
-	db.logger.Infof("%d entries were saved into storage", len(subs))
-
-	return nil
-}
-
-func (db *fileDatabase) AddAnimeUrls(urls ...animeurlservice.AnimeUrlInfo) error {
-	if len(urls) == 0 {
-		return nil
-	}
-
-	var data string
-	for _, entry := range urls {
-		animeData := formFileAnimeDataFromAnimeUrl(entry)
-		data += formStringDataToWrite(animeData) + "\n"
-	}
-	err := db.writeToFile(data, db.animeUrlPathFile)
-	if err != nil {
-		return err
-	}
-
-	db.logger.Infof("%d entries were saved into storage", len(urls))
 
 	return nil
 }
