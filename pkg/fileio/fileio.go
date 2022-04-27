@@ -14,9 +14,25 @@ type FileIO interface {
 	AppendToFile(data []byte, filePath string) error
 	ReadFile(filePath string) ([]byte, error)
 	CreateDirectory(dirpath string) error
+	GetFilesInDir(dirpath string) ([]string, error)
 }
 
 type fileIo struct{}
+
+// GetFilesInDir implements FileIO
+func (*fileIo) GetFilesInDir(dirpath string) ([]string, error) {
+	files, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return nil, err
+	}
+
+	fileNames := make([]string, 0, len(files))
+	for _, f := range files {
+		fileNames = append(fileNames, f.Name())
+	}
+
+	return fileNames, nil
+}
 
 func (*fileIo) CreateDirectory(dirpath string) error {
 	_, err := os.Stat(dirpath)

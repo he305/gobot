@@ -14,24 +14,29 @@ import (
 
 type mockfileio struct{}
 
+// GetFilesInDir implements fileio.FileIO
+func (*mockfileio) GetFilesInDir(dirpath string) ([]string, error) {
+	return nil, nil
+}
+
 // CreateDirectory implements fileio.FileIO
 func (*mockfileio) CreateDirectory(dirpath string) error {
-	panic("unimplemented")
+	return nil
 }
 
 // ReadFile implements fileio.FileIO
 func (*mockfileio) ReadFile(filePath string) ([]byte, error) {
-	panic("unimplemented")
+	return nil, nil
 }
 
 // AppendToFile implements fileio.FileIO
 func (*mockfileio) AppendToFile(data []byte, filePath string) error {
-	panic("unimplemented")
+	return nil
 }
 
 // SaveToFile implements fileio.FileIO
 func (*mockfileio) SaveToFile(data []byte, filePath string) error {
-	panic("unimplemented")
+	return nil
 }
 
 var _ fileio.FileIO = (*mockfileio)(nil)
@@ -42,24 +47,29 @@ func (f *mockfileio) SaveResponseToFile(data *http.Response, filePath string) er
 
 type mockfileioerror struct{}
 
+// GetFilesInDir implements fileio.FileIO
+func (*mockfileioerror) GetFilesInDir(dirpath string) ([]string, error) {
+	return nil, nil
+}
+
 // CreateDirectory implements fileio.FileIO
 func (*mockfileioerror) CreateDirectory(dirpath string) error {
-	panic("unimplemented")
+	return nil
 }
 
 // ReadFile implements fileio.FileIO
 func (*mockfileioerror) ReadFile(filePath string) ([]byte, error) {
-	panic("unimplemented")
+	return nil, nil
 }
 
 // AppendToFile implements fileio.FileIO
 func (*mockfileioerror) AppendToFile(data []byte, filePath string) error {
-	panic("unimplemented")
+	return nil
 }
 
 // SaveToFile implements fileio.FileIO
 func (*mockfileioerror) SaveToFile(data []byte, filePath string) error {
-	panic("unimplemented")
+	return nil
 }
 
 var _ fileio.FileIO = (*mockfileioerror)(nil)
