@@ -13,6 +13,7 @@ import (
 	"gobot/pkg/animeurlservice/subspleaserss"
 	"gobot/pkg/logging"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -70,10 +71,16 @@ func createPath(path string) error {
 	return err
 }
 
+func startHealthServer() {
+	http.ListenAndServe(":8080", nil)
+}
+
 func Run() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Println(".env file was not found")
 	}
+
+	go startHealthServer()
 
 	initLogger()
 	logger = logging.GetLogger()
