@@ -18,6 +18,8 @@ func GetLevenshteinDistancePercent(first string, second string) int {
 
 func AreSecondContainsFirst(first string, second string) bool {
 	first = strings.ToLower(first)
+	first = clearTextFromBrackets(first)
+
 	second = strings.ToLower(second)
 
 	matched, _ := regexp.MatchString(first, second)
@@ -45,4 +47,10 @@ func IsStringContainsJapanese(text string) bool {
 
 	var regexKatakana = regexp.MustCompile(`[^\P{Katakana}\p{N}]`)
 	return regexKatakana.Match(byteText)
+}
+
+func clearTextFromBrackets(str string) string {
+	str = strings.Replace(str, "[", "", -1)
+	str = strings.Replace(str, "]", "", -1)
+	return str
 }

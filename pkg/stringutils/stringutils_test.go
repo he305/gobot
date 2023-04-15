@@ -56,6 +56,32 @@ func TestAreSecondContainsFirstFalse(t *testing.T) {
 	}
 }
 
+func TestAreSecondContainFirstCases(t *testing.T) {
+	assert := assert.New(t)
+	type testStruct struct {
+		name string
+		first string
+		second string
+		expected bool
+	}
+
+	testCases := []testStruct{
+		{
+			name: "Oshi No Ko #1",
+			first: "[Oshi No Ko]",
+			second: "edens zero - 28",
+			expected: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			actual := AreSecondContainsFirst(testCase.first, testCase.second)
+			assert.Equal(testCase.expected, actual)
+		})
+	}
+}
+
 func TestIsStringContainsJapanese(t *testing.T) {
 	assert := assert.New(t)
 	type testStruct struct {

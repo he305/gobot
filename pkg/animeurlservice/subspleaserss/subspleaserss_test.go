@@ -442,15 +442,38 @@ func TestIsMathingRss(t *testing.T) {
 			rss:      "dance dance danseur - 03",
 			expected: false,
 		},
+		{
+			name: "Oshi no ko #1",
+			titles: []string{
+				"Oshi no Ko",
+				"My Star",
+				"[Oshi No Ko]",
+				"推しの子】",
+			},
+			rss: "edens zero - 28",
+			expected: false,
+		},{
+			name: "Oshi no ko #2",
+			titles: []string{
+				"Oshi no Ko",
+				"My Star",
+				"[Oshi No Ko]",
+				"推しの子】",
+			},
+			rss: "otonari ni ginga - 02",
+			expected: false,
+		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			for _, title := range testCase.titles {
 				actual := sp.isRssMatchingTitle(testCase.rss, title)
-				assert.Equal(testCase.expected, actual)
+
+				if (!assert.Equal(testCase.expected, actual)) {
+					t.Errorf("Error: title %v, rss %v", title, testCase.rss)
+				}
 			}
 		})
 	}
-
 }
