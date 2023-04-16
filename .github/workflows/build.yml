@@ -37,7 +37,7 @@ jobs:
         run: go vet ./...
 
       - name: Run tests
-        run: go test -race -vet=off ./...
+        run: go test -coverprofile=coverage.out -covermode=count -v -vet=off -coverpkg=./... -gcflags=-l -json "./..." > report.json
 
       - name: SonarCloud analyze
         uses: SonarSource/sonarcloud-github-action@master
