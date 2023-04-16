@@ -1,4 +1,5 @@
 .vscode/
+report.json
 logs/
 storage/
 cache/
